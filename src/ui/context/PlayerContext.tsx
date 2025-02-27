@@ -1,33 +1,20 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-import { PlayerProfile } from '@/domains/player/models/PlayerProfile';
-import { INITIAL_PLAYER_PROFILE } from '@/domains/shared/constants/game-constants';
+import { useState } from 'react';
+
 import { v4 as uuidv4 } from 'uuid';
 
-interface PlayerContextType {
-  profile: PlayerProfile;
-  updateProfile: (updates: Partial<PlayerProfile>) => void;
-  isLoading: boolean;
-  error: Error | null;
-}
+import { PlayerContext } from './PlayerContext.context';
+import type { PlayerProviderProps } from './PlayerContext.types';
+import type { PlayerProfile } from '../../domains/player/models/PlayerProfile';
+import { INITIAL_PLAYER_PROFILE } from '../../domains/shared/constants/game-constants';
 
-const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
-
-interface PlayerProviderProps {
-  children: ReactNode;
-}
-
-export function PlayerProvider({ children }: PlayerProviderProps) {
-  // Create a player profile with a unique ID
-  const [profile, setProfile] = useState<PlayerProfile>({
+export const PlayerProvider = ({ children }: PlayerProviderProps): JSX.Element => {
+  const [profile, setProfile] = useState(() => ({
     ...INITIAL_PLAYER_PROFILE,
     id: uuidv4(),
-  });
+  }));
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const updateProfile = (updates: Partial<PlayerProfile>) => {
-    setProfile(currentProfile => ({
+  const updateProfile = (updates: Partial<PlayerProfile>): void => {
+    setProfile((currentProfile: PlayerProfile) => ({
       ...currentProfile,
       ...updates,
       updatedAt: new Date(),
@@ -35,16 +22,6 @@ export function PlayerProvider({ children }: PlayerProviderProps) {
   };
 
   return (
-    <PlayerContext.Provider value={{ profile, updateProfile, isLoading, error }}>
-      {children}
-    </PlayerContext.Provider>
+    <PlayerContext.Provider value={{ profile, updateProfile }}>{children}</PlayerContext.Provider>
   );
-}
-
-export function usePlayer() {
-  const context = useContext(PlayerContext);
-  if (context === undefined) {
-    throw new Error('usePlayer must be used within a PlayerProvider');
-  }
-  return context;
-}
+};
