@@ -9,7 +9,7 @@
 - [x] Configure ESLint v8.56.0 with strict rules
 - [x] Set up Prettier
 - [x] Create a .gitignore file
-- [ ] Configure Husky pre-commit hooks
+- [x] Configure Husky pre-commit hooks
 - [ ] Set up Vitest and Testing Library
 - [ ] Configure Cypress for e2e tests
 - [ ] Set up GitHub Actions pipeline
