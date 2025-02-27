@@ -25,7 +25,9 @@ export default [
       {
         react: { version: 'detect' },
         'import/resolver': {
-          typescript: {},
+          typescript: {
+            project: './tsconfig.json',
+          },
           node: { extensions: ['.js', '.jsx', '.ts', '.tsx'] },
         },
       },
@@ -90,6 +92,6 @@ export default [
     },
   },
   {
-    ignores: ['dist/**'],
+    ignores: ['dist/**', 'ideas/**'],
   },
 ];

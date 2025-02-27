@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import type { FC } from 'react';
+import { useCallback, useState } from 'react';
 import './App.css';
 
-function App() {
+const App: FC = (): JSX.Element => {
   const [count, setCount] = useState(0);
+
+  const handleIncrement = useCallback((): void => {
+    setCount(prevCount => prevCount + 1);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 p-4">
@@ -21,7 +26,7 @@ function App() {
             Edit <code className="bg-gray-100 px-1 rounded">src/App.tsx</code> and save to test HMR
           </p>
           <div className="flex justify-center">
-            <button onClick={() => setCount(count => count + 1)} className="btn-primary">
+            <button onClick={handleIncrement} className="btn-primary">
               count is {count}
             </button>
           </div>
@@ -29,6 +34,6 @@ function App() {
       </main>
     </div>
   );
-}
+};
 
 export default App;
