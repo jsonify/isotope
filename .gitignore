@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -25,3 +26,6 @@ dist-ssr
 
 # Testing
 coverage
+=======
+node_modules
+>>>>>>> 85e8d0c (Add .gitignore and VSCode settings for formatting and linting)
