@@ -153,7 +153,6 @@ jobs:
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
-    # Only run E2E tests on develop and main branches, not on PRs for speed
     if: github.event_name == 'push'
     needs: [check-lockfile, validate]
     steps:
@@ -188,6 +187,15 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+      
+      # Add Cypress cache
+      - name: Setup Cypress cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
