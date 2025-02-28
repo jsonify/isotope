@@ -192,13 +192,22 @@ jobs:
       - name: Setup Cypress cache
         uses: actions/cache@v3
         with:
-          path: ~/.cache/Cypress
+          path: /home/runner/.cache/Cypress
           key: ${{ runner.os }}-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-cypress-
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Verify Cypress installation
+        run: |
+          echo "Checking Cypress binary location..."
+          npx cypress cache path
+          echo "Installing Cypress binary if needed..."
+          npx cypress install
+          echo "Verifying Cypress installation..."
+          npx cypress verify
       
       - name: Run Cypress tests
         uses: cypress-io/github-action@v5
