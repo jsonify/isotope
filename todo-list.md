@@ -10,8 +10,8 @@
 - [x] Set up Prettier
 - [x] Create a .gitignore file
 - [x] Configure Husky pre-commit hooks
-- [ ] Set up Vitest and Testing Library
-- [ ] Configure Cypress for e2e tests
+- [x] Set up Vitest and Testing Library
+- [x] Configure Cypress for e2e tests
 - [ ] Set up GitHub Actions pipeline
 - [ ] Configure Vercel deployment
 
@@ -129,6 +129,7 @@
 - [ ] Create README.md with setup instructions
 - [ ] Document code architecture
 - [ ] Create user guides for onboarding
+- [ ] Automate the documentation (optional) https://www.youtube.com/watch?v=lMFQj_ilzJA
 - [ ] Write developer onboarding guide
 - [ ] Document testing strategy and patterns
 
