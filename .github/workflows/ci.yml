@@ -95,8 +95,8 @@ jobs:
       - name: Lint code
         run: pnpm run lint
         
-      - name: Type check
-        run: pnpm run typecheck
+      - name: Format check
+        run: pnpm run format:check
 
   test:
     name: Test
