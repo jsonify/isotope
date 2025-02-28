@@ -118,7 +118,7 @@ jobs:
           run_install: false
       
       - name: Download lockfile
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pnpm-lock
           path: .
@@ -144,7 +144,7 @@ jobs:
 # Test coverage job commented out until coverage reporting setup is ready
 # Uncomment and configure when ready to set up coverage
       # - name: Upload test coverage
-      #   uses: actions/upload-artifact@v3
+      #   uses: actions/upload-artifact@v4
       #   with:
       #     name: test-coverage
       #     path: coverage/
@@ -172,7 +172,7 @@ jobs:
           run_install: false
       
       - name: Download lockfile
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pnpm-lock
           path: .
@@ -219,7 +219,7 @@ jobs:
           run_install: false
       
       - name: Download lockfile
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pnpm-lock
           path: .
@@ -246,7 +246,7 @@ jobs:
         run: npx vite-bundle-analyzer || echo "Bundle analyzer not configured, skipping"
       
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: dist/
@@ -265,7 +265,7 @@ jobs:
 #        uses: actions/checkout@v3
 #      
 #      - name: Download build artifacts
-#        uses: actions/download-artifact@v3
+#        uses: actions/download-artifact@v4
 #        with:
 #          name: build-output
 #          path: dist
@@ -291,7 +291,7 @@ jobs:
 #        uses: actions/checkout@v3
 #      
 #      - name: Download build artifacts
-#        uses: actions/download-artifact@v3
+#        uses: actions/download-artifact@v4
 #        with:
 #          name: build-output
 #          path: dist
