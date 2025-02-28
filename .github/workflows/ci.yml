@@ -239,11 +239,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Build project
+      - name: Build project with bundle analysis
         run: pnpm run build
       
-      - name: Analyze bundle size
-        run: npx vite-bundle-analyzer || echo "Bundle analyzer not configured, skipping"
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: dist/stats.html
+          retention-days: 7
       
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
