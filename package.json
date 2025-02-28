@@ -14,7 +14,8 @@
     "whats-next": "tsx src/scripts/whats-next.ts",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
-    "test": "vitest"
+    "test": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@types/uuid": "^10.0.0",
@@ -32,6 +33,7 @@
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/ui": "3.0.7",
     "autoprefixer": "^10.4.17",
     "cypress": "^14.1.0",
     "eslint": "^8.56.0",
@@ -47,6 +49,7 @@
     "lint-staged": "^15.4.3",
     "postcss": "^8.4.35",
     "prettier": "^3.5.2",
+    "rollup-plugin-visualizer": "^5.14.0",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.3",
     "typescript": "^5.5.3",
