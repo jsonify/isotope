@@ -11,6 +11,7 @@
 - [x] Create a .gitignore file
 - [x] Configure Husky pre-commit hooks
 - [x] Set up Vitest and Testing Library
+- [x] Set up Vitest in UI mode using pnpm
 - [x] Configure Cypress for e2e tests
 - [ ] Set up GitHub Actions pipeline
 - [ ] Configure Vercel deployment
