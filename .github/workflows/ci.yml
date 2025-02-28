@@ -13,8 +13,48 @@ env:
   PNPM_VERSION: '8'
 
 jobs:
+  check-lockfile:
+    name: Check Lockfile
+    runs-on: ubuntu-latest
+    outputs:
+      should-commit: ${{ steps.check.outputs.should-commit }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+      
+      - name: Check if lockfile exists and is valid
+        id: check
+        run: |
+          if [ ! -f "pnpm-lock.yaml" ] || ! pnpm install --frozen-lockfile &>/dev/null; then
+            echo "Lockfile missing or invalid. Will generate a new one."
+            pnpm install --no-frozen-lockfile
+            echo "should-commit=true" >> $GITHUB_OUTPUT
+          else
+            echo "Lockfile is valid."
+            echo "should-commit=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Upload lockfile
+        uses: actions/upload-artifact@v3
+        with:
+          name: pnpm-lock
+          path: pnpm-lock.yaml
+          retention-days: 1
+  
   validate:
     name: Validate
+    needs: check-lockfile
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -30,6 +70,12 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
+      
+      - name: Download lockfile
+        uses: actions/download-artifact@v3
+        with:
+          name: pnpm-lock
+          path: .
       
       - name: Get pnpm store directory
         shell: bash
@@ -54,7 +100,7 @@ jobs:
 
   test:
     name: Test
-    needs: validate
+    needs: [check-lockfile, validate]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -70,6 +116,12 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
+      
+      - name: Download lockfile
+        uses: actions/download-artifact@v3
+        with:
+          name: pnpm-lock
+          path: .
       
       - name: Get pnpm store directory
         shell: bash
@@ -103,7 +155,7 @@ jobs:
     runs-on: ubuntu-latest
     # Only run E2E tests on develop and main branches, not on PRs for speed
     if: github.event_name == 'push'
-    needs: validate
+    needs: [check-lockfile, validate]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -118,6 +170,12 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
+      
+      - name: Download lockfile
+        uses: actions/download-artifact@v3
+        with:
+          name: pnpm-lock
+          path: .
       
       - name: Get pnpm store directory
         shell: bash
@@ -143,7 +201,7 @@ jobs:
 
   build:
     name: Build
-    needs: [validate, test]
+    needs: [check-lockfile, validate, test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -159,6 +217,12 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
+      
+      - name: Download lockfile
+        uses: actions/download-artifact@v3
+        with:
+          name: pnpm-lock
+          path: .
       
       - name: Get pnpm store directory
         shell: bash
@@ -187,7 +251,7 @@ jobs:
           name: build-output
           path: dist/
           retention-days: 7
-
+  
 # Deployment jobs commented out until Vercel setup is ready
 # Uncomment and configure when ready to set up deployments
 
