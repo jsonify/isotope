@@ -23,6 +23,15 @@ export const ELEMENTS_DATA: Element[] = [
     group: 18,
     description: 'A colorless, odorless, tasteless, non-toxic, inert, monatomic gas.',
   },
+  {
+    symbol: 'Li',
+    name: 'Lithium',
+    atomicNumber: 3,
+    atomicWeight: 6.94,
+    period: 2,
+    group: 1,
+    description: 'A soft, silvery-white alkali metal that is highly reactive.',
+  },
   // Add remaining elements...
 ];
 
