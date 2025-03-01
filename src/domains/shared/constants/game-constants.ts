@@ -1,6 +1,11 @@
 // src/domains/shared/constants/game-constants.ts
 
-import type { Element, ProgressThreshold, PlayerProfile } from '../models/domain-models';
+import type {
+  Element,
+  ProgressThreshold,
+  PlayerProfile,
+  ElementSymbol,
+} from '../models/domain-models';
 import { ElectronSource, GameMode } from '../models/domain-models';
 
 // Periodic Table Data
