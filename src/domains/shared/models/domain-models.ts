@@ -36,9 +36,9 @@ export interface Element {
 
 // Player domain models
 export interface PlayerLevel {
-  atomicNumber: number; // Tracks progress through elements (AN)
-  atomicWeight: number; // Tracks puzzles completed (AW)
-  gameLab: number; // Tracks game modes unlocked (GL)
+  atomicNumber: number; // Tracks progress through elements (AN) 0-999
+  atomicWeight: number; // Tracks puzzles completed (AW) 0-999
+  gameLab: number; // Tracks game modes unlocked (GL) 0-999
 }
 
 export interface PlayerProfile {
@@ -149,6 +149,7 @@ export interface RewardResult {
 }
 
 // Achievement system
+
 export interface Achievement {
   id: string;
   name: string;
