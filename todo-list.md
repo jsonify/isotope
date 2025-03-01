@@ -14,7 +14,7 @@
 - [x] Set up Vitest in UI mode using pnpm
 - [x] Configure Cypress for e2e tests
 - [x] Set up GitHub Actions pipeline
-- [ ] Configure Vercel deployment
+- [x] Configure Vercel deployment
 
 ## Core Data Models
 
