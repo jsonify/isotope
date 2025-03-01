@@ -1,27 +1,69 @@
-// import { useState } from 'react';
+// src/ui/context/PlayerContext.tsx
+import type { ReactNode } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
-// import { v4 as uuidv4 } from 'uuid';
+import { PlayerContext } from './PlayerContext.context';
+import type { PlayerContextType } from './PlayerContext.types';
+import { PlayerProfileService } from '../../domains/player/services/PlayerProfileService';
+import type { PlayerProfile } from '../../domains/shared/models/domain-models';
 
-// import { PlayerContext } from './PlayerContext.context';
-// import type { PlayerProviderProps } from './PlayerContext.types';
-// import type { PlayerProfile } from '../../domains/player/models/PlayerProfile';
-// import { INITIAL_PLAYER_PROFILE } from '../../domains/shared/constants/game-constants';
+interface PlayerProviderProps {
+  children: ReactNode;
+}
 
-// export const PlayerProvider = ({ children }: PlayerProviderProps): JSX.Element => {
-//   const [profile, setProfile] = useState(() => ({
-//     ...INITIAL_PLAYER_PROFILE,
-//     id: uuidv4(),
-//   }));
+// Creating a separate hook for profile management to reduce lines in PlayerProvider
+const useProfileManagement = (): PlayerContextType => {
+  const profileService = useMemo(() => new PlayerProfileService(), []);
+  const [profile, setProfile] = useState<PlayerProfile>(profileService.getProfile());
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-//   const updateProfile = (updates: Partial<PlayerProfile>): void => {
-//     setProfile((currentProfile: PlayerProfile) => ({
-//       ...currentProfile,
-//       ...updates,
-//       updatedAt: new Date(),
-//     }));
-//   };
+  // Load the profile when the component mounts
+  useEffect(() => {
+    try {
+      const loadedProfile = profileService.recordLogin();
+      setProfile(loadedProfile);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to load profile'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [profileService]);
 
-//   return (
-//     <PlayerContext.Provider value={{ profile, updateProfile }}>{children}</PlayerContext.Provider>
-//   );
-// };
+  // Update the profile
+  const updateProfile = (updates: Partial<PlayerProfile>): void => {
+    try {
+      const updatedProfile = profileService.updateProfile(updates);
+      setProfile(updatedProfile);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to update profile'));
+    }
+  };
+
+  // Reset the profile
+  const resetProfile = (): void => {
+    try {
+      const newProfile = profileService.resetProfile();
+      setProfile(newProfile);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to reset profile'));
+    }
+  };
+
+  return {
+    profile,
+    updateProfile,
+    resetProfile,
+    isLoading,
+    error,
+  };
+};
+
+export function PlayerProvider({ children }: PlayerProviderProps): JSX.Element {
+  const profileManagement = useProfileManagement();
+
+  return <PlayerContext.Provider value={profileManagement}>{children}</PlayerContext.Provider>;
+}

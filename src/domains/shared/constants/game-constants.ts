@@ -1,6 +1,11 @@
 // src/domains/shared/constants/game-constants.ts
 
-import type { Element, ProgressThreshold, PlayerProfile } from '../models/domain-models';
+import type {
+  Element,
+  ProgressThreshold,
+  PlayerProfile,
+  ElementSymbol,
+} from '../models/domain-models';
 import { ElectronSource, GameMode } from '../models/domain-models';
 
 // Periodic Table Data
@@ -100,7 +105,7 @@ export const INITIAL_PLAYER_PROFILE: Omit<PlayerProfile, 'id'> = {
     atomicWeight: 0,
     gameLab: 0,
   },
-  currentElement: 'H',
+  currentElement: 'H' as ElementSymbol,
   electrons: 0,
   unlockedGames: [GameMode.TUTORIAL],
   achievements: [],

@@ -18,7 +18,7 @@
 
 ## Core Data Models
 
-- [ ] Define Element data structure
+- [x] Define Element data structure
 - [ ] Define PlayerProfile interface
 - [ ] Define PlayerLevel interface
 - [ ] Define Progression thresholds
