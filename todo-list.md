@@ -1,6 +1,8 @@
-# Isotope Development Todo List
+# Isotope Development Master Task List
 
-## Project Setup
+## Phase 1: Foundation (Current Phase)
+
+### Project Setup
 
 - [x] Initialize Vite with React and TypeScript
 - [x] Configure absolute imports
@@ -15,8 +17,9 @@
 - [x] Configure Cypress for e2e tests
 - [x] Set up GitHub Actions pipeline
 - [x] Configure Vercel deployment
+- [x] Fix ESLint error in test-utils.ts
 
-## Core Data Models
+### Core Data Models
 
 - [x] Define Element data structure
 - [x] Define PlayerProfile interface
@@ -27,7 +30,7 @@
 - [x] Define Economy interfaces
 - [ ] Create test data for development
 
-## Player Progression System
+### Player Progression System
 
 - [ ] Implement PlayerProfileService
 - [ ] Create element transition logic
@@ -39,105 +42,97 @@
 - [ ] Write unit tests for progression logic
 - [ ] Write integration tests for player advancement
 
-## Economy System
+### Economy System (Basic Implementation)
 
-- [ ] Implement ElectronService
+- [ ] Implement simple ElectronService
 - [ ] Create transaction history storage
-- [ ] Implement electron earning mechanisms
-- [ ] Implement electron spending logic
-- [ ] Create reward calculation formulas
-- [ ] Design store items and pricing
-- [ ] Create game unlock purchase flow
-- [ ] Write unit tests for electron transactions
-- [ ] Write integration tests for store functionality
+- [ ] Implement basic electron earning mechanisms
+- [ ] Connect electron rewards to progression
+- [ ] Test and validate core domains
 
-## Puzzle Engine
+## Phase 2: First Playable Features
 
-- [ ] Design core puzzle interface
+### Tutorial Game Mode
+
 - [ ] Implement puzzle generator for Tutorial mode
-- [ ] Implement puzzle generator for Element Match mode
-- [ ] Implement puzzle generator for Periodic Sort mode
-- [ ] Implement puzzle evaluation system
-- [ ] Create difficulty scaling algorithm
-- [ ] Implement puzzle result tracking
-- [ ] Connect puzzle completion to progression
-- [ ] Connect puzzle completion to economy
-- [ ] Write unit tests for puzzle generation
-- [ ] Write unit tests for puzzle evaluation
+- [ ] Create the UI for the tutorial
+- [ ] Connect tutorial completion to progression
+- [ ] Add electron rewards for tutorial
+- [ ] Test the full tutorial flow
 
-## UI Components
+### Main UI Components
 
 - [ ] Design and implement app layout
 - [ ] Create basic navigation system
 - [ ] Implement interactive periodic table component
-- [ ] Create element detail view
-- [ ] Design and implement progress bars modal
+- [ ] Build ProgressBarsModal
 - [ ] Create game mode selection interface
 - [ ] Implement electron counter with animations
-- [ ] Create achievement notification system
-- [ ] Design and implement tutorial UI
-- [ ] Create responsive design for all screen sizes
+- [ ] Create simple profile display
+- [ ] Link all components to state
 
-## Game Modes
+## Phase 3: Game Expansion
 
-- [ ] Implement Tutorial mode
-- [ ] Implement Element Match game
+### Element Match Game
+
+- [ ] Implement puzzle generator for Element Match mode
+- [ ] Create UI for Element Match
+- [ ] Connect to progression system
+- [ ] Add difficulty scaling
+- [ ] Test and polish
+
+### Full Economy Integration
+
+- [ ] Design store items and pricing
+- [ ] Implement Store interface
+- [ ] Create electron transaction history UI
+- [ ] Build UI for store
+- [ ] Implement purchasing functionality
+- [ ] Create game unlock purchase flow
+- [ ] Test the full economy system
+
+## Phase 4: Additional Game Modes
+
 - [ ] Implement Periodic Sort game
 - [ ] Implement Electron Shell game
 - [ ] Implement Compound Build game
 - [ ] Design remaining game modes for future implementation
 
-## State Management
+## Phase 5: Polish & Deployment
 
-- [ ] Set up React Context for player state
-- [ ] Set up React Context for game state
-- [ ] Set up React Context for economy state
-- [ ] Create custom hooks for each domain
-- [ ] Implement selectors for derived state
-- [ ] Create global event system for achievements
+### Polish
 
-## Testing & Quality Assurance
+- [ ] Add animations and transitions
+- [ ] Implement sound effects
+- [ ] Create achievement notifications
+- [ ] Enhance visual feedback
+- [ ] Test on different devices
+- [ ] Address accessibility concerns
 
-- [ ] Write unit tests for all core services
-- [ ] Create integration tests for main flows
-- [ ] Implement e2e tests for critical paths
-- [ ] Set up coverage reporting
-- [ ] Create performance test suite
-- [ ] Implement accessibility testing
-
-## Feature Integration
-
-- [ ] Connect progression system with UI
-- [ ] Integrate puzzle completion with progression
-- [ ] Link economy system with progression rewards
-- [ ] Implement game mode unlocking flow
-- [ ] Connect achievement system
-- [ ] Implement daily login bonus
-
-## Polish & Optimization
-
-- [ ] Add animations for level progression
-- [ ] Create electron earning animations
-- [ ] Optimize periodic table for performance
-- [ ] Implement code splitting
-- [ ] Add loading states and skeleton screens
-- [ ] Create error boundaries and fallbacks
-- [ ] Implement offline support
-- [ ] Add progressive enhancement features
-
-## Documentation
-
-- [ ] Create README.md with setup instructions
-- [ ] Document code architecture
-- [ ] Create user guides for onboarding
-- [ ] Automate the documentation (optional) https://www.youtube.com/watch?v=lMFQj_ilzJA
-- [ ] Write developer onboarding guide
-- [ ] Document testing strategy and patterns
-
-## Deployment
+### Deployment
 
 - [ ] Set up staging environment
 - [ ] Configure production environment
 - [ ] Set up monitoring and analytics
 - [ ] Create deployment checklist
-- [ ] Plan for future updates
+- [ ] Deploy to production
+- [ ] Monitor performance and user feedback
+
+## Additional Features (Post-MVP)
+
+- [ ] Implement offline support
+- [ ] Add progressive enhancement features
+- [ ] Create user guides for onboarding
+- [ ] Implement achievement system
+- [ ] Add statistics tracking
+- [ ] Create social sharing features
+- [ ] Build export/import functionality for progress
+
+## Development Best Practices
+
+1. Focus on one task at a time - Complete it fully before moving on
+2. Keep the project memory updated with new decisions or changes
+3. Commit regularly after completing each task or subtask
+4. Test continuously - Write tests before implementation when possible
+5. Check progress weekly against the plan and adjust if needed
+6. Build vertically - Get one feature working completely rather than doing partial work on multiple features
