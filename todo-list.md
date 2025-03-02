@@ -20,7 +20,7 @@
 
 - [x] Define Element data structure
 - [x] Define PlayerProfile interface
-- [ ] Define PlayerLevel interface
+- [x] Define PlayerLevel interface
 - [ ] Define Progression thresholds
 - [ ] Define Puzzle interfaces
 - [ ] Define GameMode enum
