@@ -22,9 +22,9 @@
 - [x] Define PlayerProfile interface
 - [x] Define PlayerLevel interface
 - [x] Define Progression thresholds
-- [ ] Define Puzzle interfaces
-- [ ] Define GameMode enum
-- [ ] Define Economy interfaces
+- [x] Define Puzzle interfaces
+- [x] Define GameMode enum
+- [x] Define Economy interfaces
 - [ ] Create test data for development
 
 ## Player Progression System
