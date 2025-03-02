@@ -7,278 +7,13 @@ import type {
   ElementSymbol,
 } from '../models/domain-models';
 import { ElectronSource, GameMode } from '../models/domain-models';
+import { TEST_ELEMENTS, TEST_PROGRESSION_THRESHOLDS } from '../test-data';
 
-// Periodic Table Data
-export const ELEMENTS_DATA: Element[] = [
-  {
-    symbol: 'H',
-    name: 'Hydrogen',
-    atomicNumber: 1,
-    atomicWeight: 1.008,
-    period: 1,
-    group: 1,
-    description: 'The lightest and most abundant chemical element in the universe.',
-  },
-  {
-    symbol: 'He',
-    name: 'Helium',
-    atomicNumber: 2,
-    atomicWeight: 4.0026,
-    period: 1,
-    group: 18,
-    description: 'A colorless, odorless, tasteless, non-toxic, inert, monatomic gas.',
-  },
-  {
-    symbol: 'Li',
-    name: 'Lithium',
-    atomicNumber: 3,
-    atomicWeight: 6.94,
-    period: 2,
-    group: 1,
-    description: 'A soft, silvery-white alkali metal that is highly reactive.',
-  },
-  {
-    symbol: 'Be',
-    name: 'Beryllium',
-    atomicNumber: 4,
-    atomicWeight: 9.0122,
-    period: 2,
-    group: 2,
-    description: 'A relatively hard, steel-gray, strong, lightweight metal.',
-  },
-  {
-    symbol: 'B',
-    name: 'Boron',
-    atomicNumber: 5,
-    atomicWeight: 10.81,
-    period: 2,
-    group: 13,
-    description: 'A metalloid that is highly unreactive at room temperature.',
-  },
-  {
-    symbol: 'C',
-    name: 'Carbon',
-    atomicNumber: 6,
-    atomicWeight: 12.011,
-    period: 2,
-    group: 14,
-    description: 'The basis for all known life forms, with unique bonding properties.',
-  },
-  {
-    symbol: 'N',
-    name: 'Nitrogen',
-    atomicNumber: 7,
-    atomicWeight: 14.007,
-    period: 2,
-    group: 15,
-    description: "A colorless, odorless gas that makes up about 78% of Earth's atmosphere.",
-  },
-  {
-    symbol: 'O',
-    name: 'Oxygen',
-    atomicNumber: 8,
-    atomicWeight: 15.999,
-    period: 2,
-    group: 16,
-    description: 'A highly reactive nonmetallic element essential for most life forms.',
-  },
-  {
-    symbol: 'F',
-    name: 'Fluorine',
-    atomicNumber: 9,
-    atomicWeight: 18.998,
-    period: 2,
-    group: 17,
-    description: 'The most reactive and electronegative of all elements.',
-  },
-  {
-    symbol: 'Ne',
-    name: 'Neon',
-    atomicNumber: 10,
-    atomicWeight: 20.18,
-    period: 2,
-    group: 18,
-    description: 'An inert noble gas known for its use in illuminated signs.',
-  },
-  {
-    symbol: 'Na',
-    name: 'Sodium',
-    atomicNumber: 11,
-    atomicWeight: 22.99,
-    period: 3,
-    group: 1,
-    description: 'A highly reactive alkali metal that is essential for life.',
-  },
-  {
-    symbol: 'Mg',
-    name: 'Magnesium',
-    atomicNumber: 12,
-    atomicWeight: 24.305,
-    period: 3,
-    group: 2,
-    description: 'A lightweight, silvery-white metal crucial for biological processes.',
-  },
-  {
-    symbol: 'Al',
-    name: 'Aluminum',
-    atomicNumber: 13,
-    atomicWeight: 26.982,
-    period: 3,
-    group: 13,
-    description: 'A lightweight, corrosion-resistant metal widely used in construction.',
-  },
-  {
-    symbol: 'Si',
-    name: 'Silicon',
-    atomicNumber: 14,
-    atomicWeight: 28.085,
-    period: 3,
-    group: 14,
-    description: "A metalloid essential for electronics and Earth's crust.",
-  },
-  {
-    symbol: 'P',
-    name: 'Phosphorus',
-    atomicNumber: 15,
-    atomicWeight: 30.974,
-    period: 3,
-    group: 15,
-    description: 'A highly reactive nonmetal essential for life.',
-  },
-  {
-    symbol: 'S',
-    name: 'Sulfur',
-    atomicNumber: 16,
-    atomicWeight: 32.06,
-    period: 3,
-    group: 16,
-    description: 'A yellow nonmetallic element used in many chemical processes.',
-  },
-  {
-    symbol: 'Cl',
-    name: 'Chlorine',
-    atomicNumber: 17,
-    atomicWeight: 35.45,
-    period: 3,
-    group: 17,
-    description: 'A toxic yellow-green gas used in water treatment.',
-  },
-  {
-    symbol: 'Ar',
-    name: 'Argon',
-    atomicNumber: 18,
-    atomicWeight: 39.948,
-    period: 3,
-    group: 18,
-    description: 'An inert noble gas used in lighting and welding.',
-  },
-];
+// Periodic Table Data - Use our test elements
+export const ELEMENTS_DATA: Element[] = TEST_ELEMENTS;
 
-// Progression Thresholds
-export const PROGRESSION_THRESHOLDS: ProgressThreshold[] = [
-  {
-    fromElement: 'H',
-    toElement: 'He',
-    puzzlesRequired: 4,
-    unlocksFeature: 'Basic element properties',
-  },
-  {
-    fromElement: 'He',
-    toElement: 'Li',
-    puzzlesRequired: 6,
-    unlocksFeature: 'Period 2 elements',
-  },
-  {
-    fromElement: 'Li',
-    toElement: 'Be',
-    puzzlesRequired: 6,
-    unlocksFeature: 'Alkaline earth metals',
-  },
-  {
-    fromElement: 'Be',
-    toElement: 'B',
-    puzzlesRequired: 7,
-    unlocksFeature: 'Metalloids',
-  },
-  {
-    fromElement: 'B',
-    toElement: 'C',
-    puzzlesRequired: 7,
-    unlocksFeature: 'Carbon chemistry',
-  },
-  {
-    fromElement: 'C',
-    toElement: 'N',
-    puzzlesRequired: 8,
-    unlocksFeature: 'Nitrogen compounds',
-  },
-  {
-    fromElement: 'N',
-    toElement: 'O',
-    puzzlesRequired: 8,
-    unlocksFeature: 'Oxygen bonding',
-  },
-  {
-    fromElement: 'O',
-    toElement: 'F',
-    puzzlesRequired: 8,
-    unlocksFeature: 'Halogen properties',
-  },
-  {
-    fromElement: 'F',
-    toElement: 'Ne',
-    puzzlesRequired: 9,
-    unlocksFeature: 'Noble gases',
-  },
-  {
-    fromElement: 'Ne',
-    toElement: 'Na',
-    puzzlesRequired: 10,
-    unlocksFeature: 'Period 3 elements',
-  },
-  {
-    fromElement: 'Na',
-    toElement: 'Mg',
-    puzzlesRequired: 10,
-    unlocksFeature: 'Metal reactivity',
-  },
-  {
-    fromElement: 'Mg',
-    toElement: 'Al',
-    puzzlesRequired: 11,
-    unlocksFeature: 'Post-transition metals',
-  },
-  {
-    fromElement: 'Al',
-    toElement: 'Si',
-    puzzlesRequired: 11,
-    unlocksFeature: 'Semiconductors',
-  },
-  {
-    fromElement: 'Si',
-    toElement: 'P',
-    puzzlesRequired: 12,
-    unlocksFeature: 'Phosphorus compounds',
-  },
-  {
-    fromElement: 'P',
-    toElement: 'S',
-    puzzlesRequired: 12,
-    unlocksFeature: 'Sulfur chemistry',
-  },
-  {
-    fromElement: 'S',
-    toElement: 'Cl',
-    puzzlesRequired: 13,
-    unlocksFeature: 'Halogen reactions',
-  },
-  {
-    fromElement: 'Cl',
-    toElement: 'Ar',
-    puzzlesRequired: 14,
-    unlocksFeature: 'Noble gas properties',
-  },
-];
+// Progression Thresholds - Use our test thresholds
+export const PROGRESSION_THRESHOLDS: ProgressThreshold[] = TEST_PROGRESSION_THRESHOLDS;
 
 // Electron Rewards Configuration
 export const ELECTRON_REWARDS: Record<ElectronSource, number> = {
@@ -317,7 +52,10 @@ export const PERIOD_INFO: Record<number, { name: string; description: string }> 
     name: 'Period 3',
     description: 'The third period contains the elements Sodium through Argon.',
   },
-  // Add more periods as needed
+  4: {
+    name: 'Period 4',
+    description: 'The fourth period contains the elements Potassium through Krypton.',
+  },
 };
 
 // Initial Player Profile
@@ -336,4 +74,103 @@ export const INITIAL_PLAYER_PROFILE: Omit<PlayerProfile, 'id'> = {
   tutorialCompleted: false,
   createdAt: new Date(),
   updatedAt: new Date(),
+};
+
+// Game Difficulties
+export const DIFFICULTY_SETTINGS = {
+  baseValue: 1,
+  elementMultiplier: 0.5,
+  periodMultiplier: 1.5,
+  maxDifficulty: 10,
+};
+
+// Game Mode Information
+export const GAME_MODE_INFO: Record<
+  GameMode,
+  {
+    name: string;
+    description: string;
+    unlockElement: ElementSymbol;
+    timeLimit?: number;
+  }
+> = {
+  [GameMode.TUTORIAL]: {
+    name: 'Tutorial',
+    description: 'Learn the basics of the game and chemistry concepts.',
+    unlockElement: 'H',
+  },
+  [GameMode.ELEMENT_MATCH]: {
+    name: 'Element Match',
+    description: 'Match elements with their properties and characteristics.',
+    unlockElement: 'H',
+    timeLimit: 60,
+  },
+  [GameMode.PERIODIC_SORT]: {
+    name: 'Periodic Sort',
+    description: 'Arrange elements in the correct order based on atomic number.',
+    unlockElement: 'Li',
+    timeLimit: 45,
+  },
+  [GameMode.ELECTRON_SHELL]: {
+    name: 'Electron Shell',
+    description: 'Build the correct electron configuration for elements.',
+    unlockElement: 'Ne',
+  },
+  [GameMode.COMPOUND_BUILD]: {
+    name: 'Compound Build',
+    description: 'Create chemical compounds by combining elements.',
+    unlockElement: 'Ar',
+  },
+  [GameMode.ELEMENT_QUIZ]: {
+    name: 'Element Quiz',
+    description: 'Test your knowledge of element properties.',
+    unlockElement: 'K',
+    timeLimit: 120,
+  },
+  [GameMode.REACTION_BALANCE]: {
+    name: 'Reaction Balance',
+    description: 'Balance chemical equations with the right coefficients.',
+    unlockElement: 'Ca',
+  },
+  [GameMode.ORBITAL_PUZZLE]: {
+    name: 'Orbital Puzzle',
+    description: 'Fill electron orbitals following quantum mechanics rules.',
+    unlockElement: 'Ca',
+  },
+  [GameMode.ISOTOPE_BUILDER]: {
+    name: 'Isotope Builder',
+    description: 'Construct isotopes by adding the right number of neutrons.',
+    unlockElement: 'Ca',
+  },
+  [GameMode.ELECTRON_FLOW]: {
+    name: 'Electron Flow',
+    description: 'Guide electrons through energy levels and orbitals.',
+    unlockElement: 'Ca',
+  },
+};
+
+// Achievement definitions
+export const ACHIEVEMENT_DEFINITIONS = {
+  tutorial_complete: {
+    id: 'achievement_tutorial',
+    name: 'First Steps',
+    description: 'Complete the tutorial',
+    category: 'progression',
+    electronReward: 10,
+  },
+  element_first: {
+    id: 'achievement_first_element',
+    name: 'Element Unlocked',
+    description: 'Unlock your first new element',
+    category: 'progression',
+    electronReward: 15,
+  },
+  period1_complete: {
+    id: 'achievement_period1',
+    name: 'Period 1 Master',
+    description: 'Unlock all elements in period 1',
+    category: 'progression',
+    electronReward: 25,
+  },
+  // Additional achievements would be defined here
 };
