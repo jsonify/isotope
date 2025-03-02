@@ -292,8 +292,6 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           vercel-args: '--prod'
-          alias-domains: |
-            isotope-dev.yourdomain.com
   deploy-production:
     name: Deploy Production
     if: github.ref == 'refs/heads/main'
