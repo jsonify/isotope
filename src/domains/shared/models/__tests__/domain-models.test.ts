@@ -2,6 +2,8 @@
 
 import { describe, it, expect } from 'vitest';
 
+import type { PlayerLevel } from '@/domains/shared/models/domain-models';
+
 import { ELEMENTS_DATA, PROGRESSION_THRESHOLDS } from '../../constants/game-constants';
 import { GameMode, ElectronSource } from '../domain-models';
 
@@ -52,5 +54,19 @@ describe('Domain Models', () => {
       expect(ELEMENTS_DATA.some(e => e.symbol === threshold.fromElement)).toBe(true);
       expect(ELEMENTS_DATA.some(e => e.symbol === threshold.toElement)).toBe(true);
     });
+  });
+});
+
+describe('PlayerLevel Interface', () => {
+  it('should create a valid PlayerLevel object', () => {
+    const playerLevel: PlayerLevel = {
+      atomicNumber: 1,
+      atomicWeight: 3,
+      gameLab: 0,
+    };
+
+    expect(playerLevel.atomicNumber).toBe(1);
+    expect(playerLevel.atomicWeight).toBe(3);
+    expect(playerLevel.gameLab).toBe(0);
   });
 });
