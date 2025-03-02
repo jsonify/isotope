@@ -19,7 +19,7 @@
 ## Core Data Models
 
 - [x] Define Element data structure
-- [ ] Define PlayerProfile interface
+- [x] Define PlayerProfile interface
 - [ ] Define PlayerLevel interface
 - [ ] Define Progression thresholds
 - [ ] Define Puzzle interfaces
