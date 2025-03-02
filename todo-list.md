@@ -14,11 +14,11 @@
 - [x] Set up Vitest in UI mode using pnpm
 - [x] Configure Cypress for e2e tests
 - [x] Set up GitHub Actions pipeline
-- [ ] Configure Vercel deployment
+- [x] Configure Vercel deployment
 
 ## Core Data Models
 
-- [ ] Define Element data structure
+- [x] Define Element data structure
 - [ ] Define PlayerProfile interface
 - [ ] Define PlayerLevel interface
 - [ ] Define Progression thresholds

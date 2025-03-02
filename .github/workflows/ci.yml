@@ -269,52 +269,50 @@ jobs:
 # Deployment jobs commented out until Vercel setup is ready
 # Uncomment and configure when ready to set up deployments
 
-#  deploy-preview:
-#    name: Deploy Preview (Develop)
-#    if: github.ref == 'refs/heads/develop'
-#    needs: [build]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v3
-#      
-#      - name: Download build artifacts
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: build-output
-#          path: dist
-#      
-#      - name: Deploy to Vercel (Preview)
-#        uses: amondnet/vercel-action@v25
-#        with:
-#          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-#          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-#          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          vercel-args: '--prod'
-#          alias-domains: |
-#            isotope-dev.yourdomain.com
-
-#  deploy-production:
-#    name: Deploy Production
-#    if: github.ref == 'refs/heads/main'
-#    needs: [build, e2e]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v3
-#      
-#      - name: Download build artifacts
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: build-output
-#          path: dist
-#      
-#      - name: Deploy to Vercel (Production)
-#        uses: amondnet/vercel-action@v25
-#        with:
-#          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-#          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-#          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          vercel-args: '--prod'
+  deploy-preview:
+    name: Deploy Preview (Develop)
+    if: github.ref == 'refs/heads/develop'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist
+      
+      - name: Deploy to Vercel (Preview)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-args: '--prod'
+  deploy-production:
+    name: Deploy Production
+    if: github.ref == 'refs/heads/main'
+    needs: [build, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist
+      
+      - name: Deploy to Vercel (Production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-args: '--prod'
+          
