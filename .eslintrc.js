@@ -31,6 +31,20 @@ module.exports = {
         ],
       },
     },
+    {
+      files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+      rules: {
+        'max-lines-per-function': [
+          'error',
+          {
+            max: 200,
+            skipBlankLines: true,
+            skipComments: true,
+            IIFEs: true,
+          },
+        ],
+      },
+    },
   ],
   settings: {
     'import/resolver': {
