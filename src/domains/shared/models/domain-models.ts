@@ -34,11 +34,31 @@ export interface Element {
   imageUrl?: string;
 }
 
-// Player domain models
+/**
+ * Represents a player's progression level in the game.
+ * Follows the AN-AW-GL format tracking system.
+ */
 export interface PlayerLevel {
-  atomicNumber: number; // Tracks progress through elements (AN) 0-999
-  atomicWeight: number; // Tracks puzzles completed (AW) 0-999
-  gameLab: number; // Tracks game modes unlocked (GL) 0-999
+  /**
+   * Atomic Number (AN) - Tracks the player's overall element progression.
+   * Corresponds to the atomic number of the current element.
+   * Range: 0-118 (max elements in periodic table)
+   */
+  atomicNumber: number;
+
+  /**
+   * Atomic Weight (AW) - Tracks puzzles completed for progression.
+   * Players need to accumulate AW points to advance to the next element.
+   * Resets when advancing to a new element.
+   */
+  atomicWeight: number;
+
+  /**
+   * Game Lab (GL) - Tracks unlocked game modes.
+   * Increases when advancing to a new period of the periodic table.
+   * Used to determine which game modes are available.
+   */
+  gameLab: number;
 }
 
 export interface PlayerProfile {

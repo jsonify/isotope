@@ -11,9 +11,10 @@
 ## 2. Core Domain Implementation (Second Week)
 
 - [x] Implement Element data models
-- [ ] Create PlayerProfile service with localStorage persistence
-- [ ] Build ProgressionService with basic functionality
-- [ ] Write unit tests for progression logic
+- [x] Create PlayerProfile service with localStorage persistence
+- [x] Build ProgressionService with basic functionality
+- [x] Write unit tests for progression logic
+
 - [ ] Implement simple ElectronService
 - [ ] Test and validate core domains
 
