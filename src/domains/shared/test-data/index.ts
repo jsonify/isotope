@@ -8,11 +8,18 @@ export * from './store-items';
 export * from './test-utils';
 
 // Default export with all test data grouped
+import elements from './elements';
+import playerProfiles from './player-profiles';
+import progressionThresholds from './progression-thresholds';
+import puzzles from './puzzles';
+import storeItems from './store-items';
+import testUtils from './test-utils';
+
 export default {
-  elements: require('./elements').default,
-  playerProfiles: require('./player-profiles').default,
-  puzzles: require('./puzzles').default,
-  progressionThresholds: require('./progression-thresholds').default,
-  storeItems: require('./store-items').default,
-  testUtils: require('./test-utils').default,
+  elements,
+  playerProfiles,
+  puzzles,
+  progressionThresholds,
+  storeItems,
+  testUtils,
 };
