@@ -25,8 +25,14 @@ class ProgressCalculationsTests {
       });
 
       it('should handle final element puzzle requirements', () => {
+        // Get the last threshold from K to Ca which requires 40 puzzles
+        const finalThreshold = PROGRESSION_THRESHOLDS[PROGRESSION_THRESHOLDS.length - 1];
         const required = this.service.calculateRequiredPuzzles('Ca' as ElementSymbol);
+
+        // Final element should maintain the last threshold requirement
         expect(required).toBeGreaterThan(0);
+        expect(required).toBe(finalThreshold.puzzlesRequired);
+        expect(required).toBe(40);
       });
     });
   }

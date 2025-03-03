@@ -149,8 +149,13 @@ export class PlayerProfileService {
       return currentProfile;
     }
 
+    const achievementWithDate = {
+      ...achievement,
+      dateUnlocked: new Date(),
+    };
+
     return this.updateProfile({
-      achievements: [...currentProfile.achievements, achievement],
+      achievements: [...currentProfile.achievements, achievementWithDate],
     });
   }
 

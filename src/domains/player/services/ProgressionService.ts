@@ -20,8 +20,11 @@ export class ProgressionService {
 
     if (!nextElement) return false; // Already at max element
 
+    // Must have threshold defined to progress
     const threshold = this.getProgressionThreshold(profile.currentElement, nextElement.symbol);
-    if (!threshold) return false;
+    if (!threshold) {
+      return false; // No progression path defined
+    }
 
     const puzzlesCompletedTowardNext =
       profile.level.atomicWeight - this.getPreviousThresholdTotal(profile.currentElement);
@@ -33,16 +36,14 @@ export class ProgressionService {
    * Advances the player to the next element if requirements are met
    */
   public advanceElement(profile: PlayerProfile): PlayerProfile {
-    if (!this.canAdvanceElement(profile)) {
-      return profile;
-    }
+    // Must pass all progression checks to advance
+    if (!this.canAdvanceElement(profile)) return profile;
 
     const currentElement = this.getElementBySymbol(profile.currentElement);
     const nextElement = this.getNextElementByAtomicNumber(currentElement.atomicNumber);
 
     if (!nextElement) return profile;
 
-    // Create updated profile
     const updatedProfile = {
       ...profile,
       currentElement: nextElement.symbol,
@@ -54,10 +55,8 @@ export class ProgressionService {
 
     // Check if this advances to a new period and update gameLab if needed
     if (nextElement.period > currentElement.period) {
-      updatedProfile.level.gameLab = updatedProfile.level.gameLab + 1;
-
-      // Unlock games based on period advancement
-      this.unlockPeriodGames(updatedProfile, nextElement.period);
+      updatedProfile.level.gameLab++;
+      return this.unlockPeriodGames(updatedProfile, nextElement.period);
     }
 
     return updatedProfile;
@@ -107,7 +106,14 @@ export class ProgressionService {
     const element = this.getElementBySymbol(currentElement);
     const nextElement = this.getNextElementByAtomicNumber(element.atomicNumber);
 
-    if (!nextElement) return 0;
+    // For final element, use its threshold requirement or last defined threshold
+    if (!nextElement) {
+      const threshold = PROGRESSION_THRESHOLDS.find(t => t.fromElement === currentElement);
+      if (threshold) {
+        return threshold.puzzlesRequired;
+      }
+      return PROGRESSION_THRESHOLDS[PROGRESSION_THRESHOLDS.length - 1].puzzlesRequired;
+    }
 
     const threshold = this.getProgressionThreshold(currentElement, nextElement.symbol);
     return threshold ? threshold.puzzlesRequired : 0;
@@ -256,8 +262,9 @@ export class ProgressionService {
     fromElement: ElementSymbol,
     toElement: ElementSymbol
   ): ProgressThreshold | undefined {
+    // Check if the threshold exists
     return PROGRESSION_THRESHOLDS.find(
-      threshold => threshold.fromElement === fromElement && threshold.toElement === toElement
+      t => t.fromElement === fromElement && t.toElement === toElement
     );
   }
 

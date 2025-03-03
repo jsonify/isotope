@@ -16,7 +16,7 @@ describe('PlayerProfileService - Achievement Management', () => {
     id: 'test-achievement',
     name: 'Test Achievement',
     description: 'Achievement for testing',
-    dateUnlocked: new Date(),
+    dateUnlocked: new Date(0), // Service should override this with current date
     category: 'progression',
     electronReward: 100,
   };
