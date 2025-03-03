@@ -28,7 +28,7 @@
 - [x] Define Puzzle interfaces
 - [x] Define GameMode enum
 - [x] Define Economy interfaces
-- [ ] Create test data for development
+- [x] Create test data for development
 
 ### Player Progression System
 
