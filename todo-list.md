@@ -32,7 +32,7 @@
 
 ### Player Progression System
 
-- [ ] Implement PlayerProfileService
+- [x] Implement PlayerProfileService
 - [ ] Create element transition logic
 - [ ] Implement the AN tracking calculations
 - [ ] Implement the AW tracking calculations
