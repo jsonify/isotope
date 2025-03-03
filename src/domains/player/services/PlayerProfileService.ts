@@ -2,7 +2,12 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { INITIAL_PLAYER_PROFILE } from '../../shared/constants/game-constants';
-import type { PlayerProfile } from '../../shared/models/domain-models';
+import type {
+  PlayerProfile,
+  PlayerLevel,
+  ElementSymbol,
+  Achievement,
+} from '../../shared/models/domain-models';
 
 export class PlayerProfileService {
   private storageKey = 'isotope_player_profile';
@@ -40,24 +45,31 @@ export class PlayerProfileService {
   /**
    * Save the player profile to localStorage
    */
-  public saveProfile(profile: PlayerProfile): void {
-    // Update the lastLogin and updatedAt dates
-    const updatedProfile = {
-      ...profile,
-      updatedAt: new Date(),
-    };
+  public saveProfile(profile: PlayerProfile): boolean {
+    try {
+      // Update the lastLogin and updatedAt dates
+      const updatedProfile = {
+        ...profile,
+        updatedAt: new Date(),
+      };
 
-    localStorage.setItem(this.storageKey, JSON.stringify(updatedProfile));
+      localStorage.setItem(this.storageKey, JSON.stringify(updatedProfile));
+      return true;
+    } catch (error) {
+      console.error('Failed to save player profile:', error);
+      return false;
+    }
   }
 
   /**
    * Create a new player profile
    */
-  private createNewProfile(): PlayerProfile {
+  private createNewProfile(displayName: string = 'New Scientist'): PlayerProfile {
     const now = new Date();
     const newProfile: PlayerProfile = {
       ...INITIAL_PLAYER_PROFILE,
       id: uuidv4(),
+      displayName,
       lastLogin: now,
       createdAt: now,
       updatedAt: now,
@@ -84,6 +96,20 @@ export class PlayerProfileService {
   }
 
   /**
+   * Updates the player's level
+   */
+  public updateLevel(levelUpdates: Partial<PlayerLevel>): PlayerProfile {
+    const currentProfile = this.getProfile();
+
+    return this.updateProfile({
+      level: {
+        ...currentProfile.level,
+        ...levelUpdates,
+      },
+    });
+  }
+
+  /**
    * Reset the player profile (for testing or user request)
    */
   public resetProfile(): PlayerProfile {
@@ -103,5 +129,76 @@ export class PlayerProfileService {
    */
   public completeTutorial(): PlayerProfile {
     return this.updateProfile({ tutorialCompleted: true });
+  }
+
+  /**
+   * Updates the player's current element
+   */
+  public setCurrentElement(element: ElementSymbol): PlayerProfile {
+    return this.updateProfile({ currentElement: element });
+  }
+
+  /**
+   * Adds a new achievement to the player profile
+   */
+  public addAchievement(achievement: Achievement): PlayerProfile {
+    const currentProfile = this.getProfile();
+
+    // Check if achievement is already in the list
+    if (currentProfile.achievements.some(a => a.id === achievement.id)) {
+      return currentProfile;
+    }
+
+    return this.updateProfile({
+      achievements: [...currentProfile.achievements, achievement],
+    });
+  }
+
+  /**
+   * Unlocks a game mode for the player
+   */
+  public unlockGameMode(gameMode: number): PlayerProfile {
+    const currentProfile = this.getProfile();
+
+    // Check if game mode is already unlocked
+    if (currentProfile.unlockedGames.includes(gameMode)) {
+      return currentProfile;
+    }
+
+    return this.updateProfile({
+      unlockedGames: [...currentProfile.unlockedGames, gameMode],
+    });
+  }
+
+  /**
+   * Award electrons to the player
+   */
+  public awardElectrons(amount: number): PlayerProfile {
+    const currentProfile = this.getProfile();
+
+    return this.updateProfile({
+      electrons: currentProfile.electrons + amount,
+    });
+  }
+
+  /**
+   * Spend electrons if the player has enough
+   */
+  public spendElectrons(amount: number): { success: boolean; profile: PlayerProfile } {
+    const currentProfile = this.getProfile();
+
+    if (currentProfile.electrons < amount) {
+      return {
+        success: false,
+        profile: currentProfile,
+      };
+    }
+
+    return {
+      success: true,
+      profile: this.updateProfile({
+        electrons: currentProfile.electrons - amount,
+      }),
+    };
   }
 }

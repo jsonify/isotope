@@ -28,11 +28,11 @@
 - [x] Define Puzzle interfaces
 - [x] Define GameMode enum
 - [x] Define Economy interfaces
-- [ ] Create test data for development
+- [x] Create test data for development
 
 ### Player Progression System
 
-- [ ] Implement PlayerProfileService
+- [x] Implement PlayerProfileService
 - [ ] Create element transition logic
 - [ ] Implement the AN tracking calculations
 - [ ] Implement the AW tracking calculations
