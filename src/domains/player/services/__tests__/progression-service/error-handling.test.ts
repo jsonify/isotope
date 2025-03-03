@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { setupTest, createAdvancedProfile } from './setup';
 import type { ElementSymbol } from '../../../../shared/models/domain-models';
+import { TEST_PROGRESSION_THRESHOLDS } from '../../../../shared/test-data';
 
 describe('ProgressionService - Error Handling', () => {
   const { service, baseProfile } = setupTest();
@@ -23,9 +24,20 @@ describe('ProgressionService - Error Handling', () => {
 
   describe('edge cases', () => {
     it('should handle missing progression thresholds', () => {
+      // Temporarily remove H -> He threshold for this test
+      const originalThresholds = [...TEST_PROGRESSION_THRESHOLDS];
+      TEST_PROGRESSION_THRESHOLDS.splice(0, 1);
+
       const profile = createAdvancedProfile('H', 1, 1000, 1);
 
       const result = service.advanceElement(profile);
+
+      // Restore original thresholds
+      TEST_PROGRESSION_THRESHOLDS.splice(
+        0,
+        TEST_PROGRESSION_THRESHOLDS.length,
+        ...originalThresholds
+      );
       expect(result).toEqual(profile);
     });
 

@@ -26,11 +26,15 @@ describe('PlayerProfileService - Game Mode Management', () => {
   });
 
   it('should maintain order of unlocked games', () => {
+    const initialProfile = service.getProfile();
+    expect(initialProfile.unlockedGames).toEqual([GameMode.TUTORIAL]);
+
     service.unlockGameMode(GameMode.ELEMENT_MATCH);
     service.unlockGameMode(GameMode.PERIODIC_SORT);
     const profile = service.unlockGameMode(GameMode.ELECTRON_SHELL);
 
-    expect(profile.unlockedGames).toEqual([
+    // Verify that new games are added in order after the tutorial
+    expect(profile.unlockedGames.slice(1)).toEqual([
       GameMode.ELEMENT_MATCH,
       GameMode.PERIODIC_SORT,
       GameMode.ELECTRON_SHELL,
