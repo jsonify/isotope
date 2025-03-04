@@ -106,10 +106,17 @@ export class ProgressionService {
     };
   }
 
+  /**
+   * Handles advancement to a new period in the periodic table
+   * @param updatedProfile The player's profile with updated element
+   * @param nextElement The element being advanced to
+   * @param currentElement Reserved for future use in transition animations and progress tracking
+   * @param transitionService Service for managing transition effects
+   */
   private handlePeriodAdvancement(
     updatedProfile: PlayerProfile,
     nextElement: Element,
-    currentElement: Element,
+    _currentElement: Element,
     transitionService: TransitionService
   ): PlayerProfile {
     updatedProfile.level.gameLab++;
