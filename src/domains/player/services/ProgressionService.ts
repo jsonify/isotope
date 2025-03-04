@@ -9,8 +9,26 @@ import type {
   Element,
 } from '../../shared/models/domain-models';
 import { GameMode } from '../../shared/models/domain-models';
+import type {
+  ElementAdvanceTransition,
+  GameModeUnlockTransition,
+  PeriodCompleteTransition,
+} from '../../shared/models/transition-models';
+import { TransitionType } from '../../shared/models/transition-models';
+import { TransitionService } from '../../shared/services/TransitionService';
 
 export class ProgressionService {
+  // Define which games unlock at which periods
+  private readonly periodGameUnlocks: Record<number, GameMode[]> = {
+    1: [GameMode.TUTORIAL, GameMode.ELEMENT_MATCH],
+    2: [GameMode.PERIODIC_SORT, GameMode.ELECTRON_SHELL],
+    3: [GameMode.COMPOUND_BUILD, GameMode.ELEMENT_QUIZ],
+    4: [GameMode.REACTION_BALANCE],
+    5: [GameMode.ORBITAL_PUZZLE],
+    6: [GameMode.ISOTOPE_BUILDER],
+    7: [GameMode.ELECTRON_FLOW],
+  };
+
   /**
    * Determines if player has met requirements to advance to the next element
    */
@@ -44,6 +62,18 @@ export class ProgressionService {
 
     if (!nextElement) return profile;
 
+    const transitionService = TransitionService.getInstance();
+    const advanceTransition: ElementAdvanceTransition = {
+      type: TransitionType.ELEMENT_ADVANCE,
+      fromElement: currentElement.symbol,
+      toElement: nextElement.symbol,
+      newLevel: {
+        atomicNumber: profile.level.atomicNumber + 1,
+        atomicWeight: profile.level.atomicWeight,
+      },
+    };
+    transitionService.createTransition(TransitionType.ELEMENT_ADVANCE, advanceTransition);
+
     const updatedProfile = {
       ...profile,
       currentElement: nextElement.symbol,
@@ -56,6 +86,18 @@ export class ProgressionService {
     // Check if this advances to a new period and update gameLab if needed
     if (nextElement.period > currentElement.period) {
       updatedProfile.level.gameLab++;
+
+      const periodTransition: PeriodCompleteTransition = {
+        type: TransitionType.PERIOD_COMPLETE,
+        periodNumber: nextElement.period,
+        // Explicitly check if the array exists and is not empty
+        unlockedGameModes: Array.isArray(this.periodGameUnlocks[nextElement.period])
+          ? this.periodGameUnlocks[nextElement.period]
+          : [],
+      };
+
+      transitionService.createTransition(TransitionType.PERIOD_COMPLETE, periodTransition);
+
       return this.unlockPeriodGames(updatedProfile, nextElement.period);
     }
 
@@ -66,29 +108,27 @@ export class ProgressionService {
    * Unlocks games associated with reaching a new period
    */
   public unlockPeriodGames(profile: PlayerProfile, period?: number): PlayerProfile {
-    // Define which games unlock at which periods
-    const periodGameUnlocks: Record<number, GameMode[]> = {
-      1: [GameMode.TUTORIAL, GameMode.ELEMENT_MATCH],
-      2: [GameMode.PERIODIC_SORT, GameMode.ELECTRON_SHELL],
-      3: [GameMode.COMPOUND_BUILD, GameMode.ELEMENT_QUIZ],
-      4: [GameMode.REACTION_BALANCE],
-      5: [GameMode.ORBITAL_PUZZLE],
-      6: [GameMode.ISOTOPE_BUILDER],
-      7: [GameMode.ELECTRON_FLOW],
-    };
-
     const currentElement = this.getElementBySymbol(profile.currentElement);
 
     // Get games to unlock for this period
     const periodToUse = period ?? currentElement.period;
-    const availableGames = periodGameUnlocks[periodToUse];
+    const availableGames = this.periodGameUnlocks[periodToUse];
     const gamesToUnlock = availableGames ?? [];
+
+    const transitionService = TransitionService.getInstance();
 
     // Add any new games not already unlocked
     const updatedUnlockedGames = [...profile.unlockedGames];
 
-    gamesToUnlock.forEach(gameMode => {
+    gamesToUnlock.forEach((gameMode: GameMode) => {
       if (!updatedUnlockedGames.includes(gameMode)) {
+        // Create transition for each newly unlocked game mode
+        const unlockTransition: GameModeUnlockTransition = {
+          type: TransitionType.GAME_MODE_UNLOCK,
+          gameMode,
+        };
+
+        transitionService.createTransition(TransitionType.GAME_MODE_UNLOCK, unlockTransition);
         updatedUnlockedGames.push(gameMode);
       }
     });
