@@ -7,7 +7,15 @@ import type {
   PlayerLevel,
   ElementSymbol,
   Achievement,
+  GameMode,
 } from '../../shared/models/domain-models';
+import type {
+  ElementUnlockTransition,
+  AchievementUnlockTransition,
+  GameModeUnlockTransition,
+} from '../../shared/models/transition-models';
+import { TransitionType } from '../../shared/models/transition-models';
+import { TransitionService } from '../../shared/services/TransitionService';
 
 export class PlayerProfileService {
   private storageKey = 'isotope_player_profile';
@@ -23,16 +31,18 @@ export class PlayerProfileService {
         const parsedProfile = JSON.parse(storedProfile) as PlayerProfile;
 
         // Convert date strings back to Date objects
-        return {
+        const convertedProfile = {
           ...parsedProfile,
-          lastLogin: new Date(parsedProfile.lastLogin),
-          createdAt: new Date(parsedProfile.createdAt),
-          updatedAt: new Date(parsedProfile.updatedAt),
+          lastLogin: this.parseDate(parsedProfile.lastLogin),
+          createdAt: this.parseDate(parsedProfile.createdAt),
+          updatedAt: this.parseDate(parsedProfile.updatedAt),
           achievements: parsedProfile.achievements.map(achievement => ({
             ...achievement,
-            dateUnlocked: new Date(achievement.dateUnlocked),
+            dateUnlocked: this.parseDate(achievement.dateUnlocked),
           })),
         };
+
+        return convertedProfile;
       } catch (error) {
         console.error('Error parsing stored profile:', error);
         return this.createNewProfile();
@@ -50,7 +60,7 @@ export class PlayerProfileService {
       // Update the lastLogin and updatedAt dates
       const updatedProfile = {
         ...profile,
-        updatedAt: new Date(),
+        updatedAt: this.parseDate(),
       };
 
       localStorage.setItem(this.storageKey, JSON.stringify(updatedProfile));
@@ -65,7 +75,7 @@ export class PlayerProfileService {
    * Create a new player profile
    */
   private createNewProfile(displayName: string = 'New Scientist'): PlayerProfile {
-    const now = new Date();
+    const now = this.parseDate();
     const newProfile: PlayerProfile = {
       ...INITIAL_PLAYER_PROFILE,
       id: uuidv4(),
@@ -83,12 +93,10 @@ export class PlayerProfileService {
    * Update specific fields in the player profile
    */
   public updateProfile(updates: Partial<PlayerProfile>): PlayerProfile {
-    const currentProfile = this.getProfile();
-
     const updatedProfile = {
-      ...currentProfile,
+      ...this.getProfile(),
       ...updates,
-      updatedAt: new Date(),
+      updatedAt: this.parseDate(),
     };
 
     this.saveProfile(updatedProfile);
@@ -99,11 +107,9 @@ export class PlayerProfileService {
    * Updates the player's level
    */
   public updateLevel(levelUpdates: Partial<PlayerLevel>): PlayerProfile {
-    const currentProfile = this.getProfile();
-
     return this.updateProfile({
       level: {
-        ...currentProfile.level,
+        ...this.getProfile().level,
         ...levelUpdates,
       },
     });
@@ -121,7 +127,7 @@ export class PlayerProfileService {
    * Update last login time
    */
   public recordLogin(): PlayerProfile {
-    return this.updateProfile({ lastLogin: new Date() });
+    return this.updateProfile({ lastLogin: this.parseDate() });
   }
 
   /**
@@ -135,6 +141,15 @@ export class PlayerProfileService {
    * Updates the player's current element
    */
   public setCurrentElement(element: ElementSymbol): PlayerProfile {
+    const transitionService = TransitionService.getInstance();
+
+    const transitionData: ElementUnlockTransition = {
+      type: TransitionType.ELEMENT_UNLOCK,
+      element,
+    };
+
+    transitionService.createTransition(TransitionType.ELEMENT_UNLOCK, transitionData);
+
     return this.updateProfile({ currentElement: element });
   }
 
@@ -149,10 +164,18 @@ export class PlayerProfileService {
       return currentProfile;
     }
 
-    const achievementWithDate = {
+    const achievementWithDate: Achievement = {
       ...achievement,
-      dateUnlocked: new Date(),
+      dateUnlocked: this.parseDate(),
     };
+
+    const transitionService = TransitionService.getInstance();
+    const transitionData: AchievementUnlockTransition = {
+      type: TransitionType.ACHIEVEMENT_UNLOCK,
+      achievement: achievementWithDate,
+    };
+
+    transitionService.createTransition(TransitionType.ACHIEVEMENT_UNLOCK, transitionData);
 
     return this.updateProfile({
       achievements: [...currentProfile.achievements, achievementWithDate],
@@ -162,13 +185,21 @@ export class PlayerProfileService {
   /**
    * Unlocks a game mode for the player
    */
-  public unlockGameMode(gameMode: number): PlayerProfile {
+  public unlockGameMode(gameMode: GameMode): PlayerProfile {
     const currentProfile = this.getProfile();
 
     // Check if game mode is already unlocked
     if (currentProfile.unlockedGames.includes(gameMode)) {
       return currentProfile;
     }
+
+    const transitionService = TransitionService.getInstance();
+    const transitionData: GameModeUnlockTransition = {
+      type: TransitionType.GAME_MODE_UNLOCK,
+      gameMode,
+    };
+
+    transitionService.createTransition(TransitionType.GAME_MODE_UNLOCK, transitionData);
 
     return this.updateProfile({
       unlockedGames: [...currentProfile.unlockedGames, gameMode],
@@ -205,5 +236,17 @@ export class PlayerProfileService {
         electrons: currentProfile.electrons - amount,
       }),
     };
+  }
+
+  private parseDate(value?: string | number | Date): Date {
+    if (value === undefined) {
+      return new Date();
+    }
+
+    if (value instanceof Date) {
+      return new Date(value.getTime());
+    }
+
+    return new Date(value);
   }
 }

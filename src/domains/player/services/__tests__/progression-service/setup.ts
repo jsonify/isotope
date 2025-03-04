@@ -1,5 +1,6 @@
 import type { PlayerProfile, ElementSymbol } from '../../../../shared/models/domain-models';
 import { GameMode } from '../../../../shared/models/domain-models';
+import { setupTestEnv } from '../../../../shared/test-data/setup-test-env';
 import { ProgressionService } from '../../ProgressionService';
 
 interface TestContext {
@@ -8,6 +9,8 @@ interface TestContext {
 }
 
 export const setupTest = (): TestContext => {
+  setupTestEnv();
+
   const service = new ProgressionService();
   const baseProfile: PlayerProfile = {
     id: 'test-id',
