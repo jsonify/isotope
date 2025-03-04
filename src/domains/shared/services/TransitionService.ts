@@ -16,19 +16,31 @@ export class TransitionService {
   }
 
   public static getInstance(): TransitionService {
-    if (TransitionService.instance === undefined || TransitionService.instance === null) {
-      TransitionService.instance = new TransitionService();
-    }
-    return TransitionService.instance;
+    this.instance ??= new TransitionService();
+    return this.instance;
   }
 
   private checkReducedMotion(): boolean {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Return false if not in a browser environment
+    if (!this.isBrowserEnvironment()) {
+      return false;
+    }
+
+    // Check if matchMedia is supported and motion preference is set
+    return this.checkMotionPreference();
+  }
+
+  private isBrowserEnvironment(): boolean {
+    return typeof window !== 'undefined' && typeof window.matchMedia === 'function';
+  }
+
+  private checkMotionPreference(): boolean {
+    const mediaQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    return mediaQuery?.matches ?? false;
   }
 
   private generateTransitionId(): string {
-    return `transition-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `transition-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
 
   public subscribe(handler: TransitionHandler): () => void {

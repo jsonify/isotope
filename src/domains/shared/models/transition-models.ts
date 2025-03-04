@@ -6,6 +6,7 @@ export enum TransitionType {
   ACHIEVEMENT_UNLOCK = 'ACHIEVEMENT_UNLOCK',
   GAME_MODE_UNLOCK = 'GAME_MODE_UNLOCK',
   PERIOD_COMPLETE = 'PERIOD_COMPLETE',
+  ATOMIC_WEIGHT_AWARDED = 'ATOMIC_WEIGHT_AWARDED',
 }
 
 export enum TransitionState {
@@ -27,7 +28,8 @@ export type TransitionData =
   | ElementAdvanceTransition
   | AchievementUnlockTransition
   | GameModeUnlockTransition
-  | PeriodCompleteTransition;
+  | PeriodCompleteTransition
+  | AtomicWeightAwardedTransition;
 
 export interface ElementUnlockTransition {
   type: TransitionType.ELEMENT_UNLOCK;
@@ -58,4 +60,11 @@ export interface PeriodCompleteTransition {
   type: TransitionType.PERIOD_COMPLETE;
   periodNumber: number;
   unlockedGameModes: GameMode[];
+}
+
+export interface AtomicWeightAwardedTransition {
+  type: TransitionType.ATOMIC_WEIGHT_AWARDED;
+  amount: number;
+  elementSymbol: ElementSymbol;
+  currentTotal: number;
 }
