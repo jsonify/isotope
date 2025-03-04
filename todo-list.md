@@ -33,7 +33,7 @@
 ### Player Progression System
 
 - [x] Implement PlayerProfileService
-- [ ] Create element transition logic
+- [x] Create element transition logic
 - [ ] Implement the AN tracking calculations
 - [ ] Implement the AW tracking calculations
 - [ ] Implement the GL unlocking system

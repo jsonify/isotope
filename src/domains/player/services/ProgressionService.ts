@@ -12,6 +12,7 @@ import { GameMode } from '../../shared/models/domain-models';
 import type {
   ElementAdvanceTransition,
   GameModeUnlockTransition,
+  AtomicWeightAwardedTransition,
   PeriodCompleteTransition,
 } from '../../shared/models/transition-models';
 import { TransitionType } from '../../shared/models/transition-models';
@@ -63,15 +64,7 @@ export class ProgressionService {
     if (!nextElement) return profile;
 
     const transitionService = TransitionService.getInstance();
-    const advanceTransition: ElementAdvanceTransition = {
-      type: TransitionType.ELEMENT_ADVANCE,
-      fromElement: currentElement.symbol,
-      toElement: nextElement.symbol,
-      newLevel: {
-        atomicNumber: profile.level.atomicNumber + 1,
-        atomicWeight: profile.level.atomicWeight,
-      },
-    };
+    const advanceTransition = this.createAdvanceTransition(profile, currentElement, nextElement);
     transitionService.createTransition(TransitionType.ELEMENT_ADVANCE, advanceTransition);
 
     const updatedProfile = {
@@ -80,28 +73,97 @@ export class ProgressionService {
       level: {
         ...profile.level,
         atomicNumber: profile.level.atomicNumber + 1,
+        atomicWeight: 0, // Reset atomicWeight when advancing to new element
       },
     };
 
     // Check if this advances to a new period and update gameLab if needed
     if (nextElement.period > currentElement.period) {
-      updatedProfile.level.gameLab++;
-
-      const periodTransition: PeriodCompleteTransition = {
-        type: TransitionType.PERIOD_COMPLETE,
-        periodNumber: nextElement.period,
-        // Explicitly check if the array exists and is not empty
-        unlockedGameModes: Array.isArray(this.periodGameUnlocks[nextElement.period])
-          ? this.periodGameUnlocks[nextElement.period]
-          : [],
-      };
-
-      transitionService.createTransition(TransitionType.PERIOD_COMPLETE, periodTransition);
-
-      return this.unlockPeriodGames(updatedProfile, nextElement.period);
+      return this.handlePeriodAdvancement(
+        updatedProfile,
+        nextElement,
+        currentElement,
+        transitionService
+      );
     }
 
     return updatedProfile;
+  }
+
+  private createAdvanceTransition(
+    profile: PlayerProfile,
+    currentElement: Element,
+    nextElement: Element
+  ): ElementAdvanceTransition {
+    return {
+      type: TransitionType.ELEMENT_ADVANCE,
+      fromElement: currentElement.symbol,
+      toElement: nextElement.symbol,
+      newLevel: {
+        atomicNumber: profile.level.atomicNumber + 1,
+        atomicWeight: 0, // Reset atomicWeight when advancing to new element
+      },
+    };
+  }
+
+  private handlePeriodAdvancement(
+    updatedProfile: PlayerProfile,
+    nextElement: Element,
+    currentElement: Element,
+    transitionService: TransitionService
+  ): PlayerProfile {
+    updatedProfile.level.gameLab++;
+
+    const periodTransition: PeriodCompleteTransition = {
+      type: TransitionType.PERIOD_COMPLETE,
+      periodNumber: nextElement.period,
+      // Explicitly check if the array exists and is not empty
+      unlockedGameModes: Array.isArray(this.periodGameUnlocks[nextElement.period])
+        ? this.periodGameUnlocks[nextElement.period]
+        : [],
+    };
+
+    transitionService.createTransition(TransitionType.PERIOD_COMPLETE, periodTransition);
+
+    return this.unlockPeriodGames(updatedProfile, nextElement.period);
+  }
+
+  /**
+   * Awards atomic weight to the player and checks for element advancement
+   * @param profile The player's profile
+   * @param atomicWeightAwarded The amount of atomic weight to award
+   * @returns Updated player profile
+   */
+  public awardAtomicWeight(profile: PlayerProfile, atomicWeightAwarded: number): PlayerProfile {
+    if (atomicWeightAwarded <= 0) {
+      return profile; // No atomic weight awarded
+    }
+
+    const transitionService = TransitionService.getInstance();
+
+    // Create atomic weight awarded transition
+    const awardTransition: AtomicWeightAwardedTransition = {
+      type: TransitionType.ATOMIC_WEIGHT_AWARDED,
+      amount: atomicWeightAwarded,
+      elementSymbol: profile.currentElement,
+      currentTotal: profile.level.atomicWeight + atomicWeightAwarded,
+    };
+
+    transitionService.createTransition(TransitionType.ATOMIC_WEIGHT_AWARDED, awardTransition);
+
+    // Update profile with new atomic weight
+    const updatedProfile = {
+      ...profile,
+      level: {
+        ...profile.level,
+        atomicWeight: profile.level.atomicWeight + atomicWeightAwarded,
+      },
+    };
+
+    // Check if player can advance to next element and handle advancement if possible
+    return this.canAdvanceElement(updatedProfile)
+      ? this.advanceElement(updatedProfile)
+      : updatedProfile;
   }
 
   /**
