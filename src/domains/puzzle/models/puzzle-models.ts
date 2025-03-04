@@ -1,6 +1,6 @@
 // src/domains/puzzle/models/puzzle-models.ts
 
-import type { ElementSymbol } from '@/domains/shared/models/domain-models';
+import type { ElementSymbol } from '../../../domains/shared/models/domain-models';
 
 /**
  * Enum for the different game modes available in Isotope

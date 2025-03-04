@@ -46,10 +46,11 @@ export class ElectronService {
   }
 
   /**
-   * Calculates reward for completing a puzzle
+   * Calculates reward for completing a puzzle.
+   * @param _profile Reserved for future use when rewards may be influenced by player progression
    */
   public calculatePuzzleReward(
-    profile: PlayerProfile,
+    _profile: PlayerProfile,
     isPerfect: boolean,
     difficulty: number
   ): RewardResult {
