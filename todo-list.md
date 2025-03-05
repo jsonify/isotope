@@ -34,8 +34,8 @@
 
 - [x] Implement PlayerProfileService
 - [x] Create element transition logic
-- [ ] Implement the AN tracking calculations
-- [ ] Implement the AW tracking calculations
+- [x] Implement the AN tracking calculations
+- [x] Implement the AW tracking calculations
 - [ ] Implement the GL unlocking system
 - [ ] Create period-based progress calculations
 - [ ] Implement save/load functionality
