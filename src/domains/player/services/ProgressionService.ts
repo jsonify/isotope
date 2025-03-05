@@ -1,5 +1,6 @@
 // src/domains/player/services/ProgressionService.ts
-// src/domains/shared/constants/game-constants.ts
+
+import { AtomicWeightService } from './AtomicWeightService';
 import { ELEMENTS_DATA, PROGRESSION_THRESHOLDS } from '../../shared/constants/game-constants';
 import type {
   ElementSymbol,
@@ -7,6 +8,8 @@ import type {
   PlayerProgress,
   ProgressThreshold,
   Element,
+  Puzzle,
+  PuzzleResult,
 } from '../../shared/models/domain-models';
 import { GameMode } from '../../shared/models/domain-models';
 import type {
@@ -19,7 +22,8 @@ import { TransitionType } from '../../shared/models/transition-models';
 import { TransitionService } from '../../shared/services/TransitionService';
 
 export class ProgressionService {
-  // Define which games unlock at which periods
+  private atomicWeightService: AtomicWeightService;
+
   private readonly periodGameUnlocks: Record<number, GameMode[]> = {
     1: [GameMode.TUTORIAL, GameMode.ELEMENT_MATCH],
     2: [GameMode.PERIODIC_SORT, GameMode.ELECTRON_SHELL],
@@ -30,20 +34,134 @@ export class ProgressionService {
     7: [GameMode.ELECTRON_FLOW],
   };
 
+  public constructor() {
+    this.atomicWeightService = new AtomicWeightService();
+  }
+
   /**
-   * Determines if player has met requirements to advance to the next element
+   * Get information about the current period progress
    */
+  public getPeriodProgress(profile: PlayerProfile): {
+    currentPeriod: number;
+    elementsInPeriod: ElementSymbol[];
+    completedInPeriod: number;
+  } {
+    const currentElement = this.getElementBySymbol(profile.currentElement);
+    const period = currentElement.period;
+
+    // Get elements in current period
+    const elementsInPeriod = ELEMENTS_DATA.filter(element => element.period === period).map(
+      element => element.symbol
+    );
+
+    // Count completed elements in this period
+    const completedInPeriod = ELEMENTS_DATA.filter(
+      element => element.period === period && element.atomicNumber <= profile.level.atomicNumber
+    ).length;
+
+    return {
+      currentPeriod: period,
+      elementsInPeriod,
+      completedInPeriod,
+    };
+  }
+
+  /**
+   * Gets the percentage progress to the next element (0-100)
+   */
+  public getPercentToNextElement(profile: PlayerProfile): number {
+    const currentElement = this.getElementBySymbol(profile.currentElement);
+    const nextElement = this.getNextElementByAtomicNumber(currentElement.atomicNumber);
+
+    if (!nextElement) {
+      return 100; // Already at max element
+    }
+
+    const threshold = this.getProgressionThreshold(profile.currentElement, nextElement.symbol);
+    if (!threshold) {
+      return 0; // No valid threshold found
+    }
+
+    const previousTotal = this.getPreviousThresholdTotal(profile.currentElement);
+    const puzzlesCompletedTowardNext = profile.level.atomicWeight - previousTotal;
+
+    return Math.min(
+      100,
+      Math.round((puzzlesCompletedTowardNext / threshold.puzzlesRequired) * 100)
+    );
+  }
+
+  /**
+   * Gets detailed progress information for UI
+   */
+  public getPlayerProgress(profile: PlayerProfile): PlayerProgress {
+    const currentElement = this.getElementBySymbol(profile.currentElement);
+    const nextElement = this.getNextElementByAtomicNumber(currentElement.atomicNumber);
+
+    const previousThresholdTotal = this.getPreviousThresholdTotal(profile.currentElement);
+    const puzzlesCompletedTowardNext = profile.level.atomicWeight - previousThresholdTotal;
+    const puzzlesRequiredForNext = nextElement
+      ? this.calculateRequiredPuzzles(profile.currentElement)
+      : 0;
+
+    const percentToNextElement = this.getPercentToNextElement(profile);
+    const periodProgress = this.getPeriodProgress(profile);
+
+    return {
+      currentElement: profile.currentElement,
+      totalPuzzlesCompleted: profile.level.atomicWeight,
+      puzzlesCompletedTowardNext,
+      puzzlesRequiredForNext,
+      percentToNextElement,
+      currentPeriod: periodProgress.currentPeriod,
+      elementsInCurrentPeriod: periodProgress.elementsInPeriod,
+      periodsUnlocked: Math.max(
+        ...ELEMENTS_DATA.filter(
+          element =>
+            ELEMENTS_DATA.findIndex(e => e.symbol === element.symbol) <=
+            ELEMENTS_DATA.findIndex(e => e.symbol === profile.currentElement)
+        ).map(element => element.period)
+      ),
+    };
+  }
+
+  // ... (rest of the methods from previous implementation)
+  public handlePuzzleCompletion(
+    profile: PlayerProfile,
+    puzzle: Puzzle,
+    result: PuzzleResult
+  ): PlayerProfile {
+    if (!this.isGameModeUnlocked(profile, puzzle.type)) {
+      return profile;
+    }
+
+    const basePoints = this.atomicWeightService.calculatePuzzlePoints(
+      puzzle,
+      result,
+      profile.level.atomicNumber
+    );
+
+    const totalPoints = this.atomicWeightService.calculateBonusPoints(basePoints, {
+      isFirstCompletion: !puzzle.completed,
+      isFlawlessStreak: result.isPerfect && puzzle.perfectSolve,
+      streakLength: this.calculateFlawlessStreak(profile, puzzle.type),
+    });
+
+    return this.awardAtomicWeight(profile, totalPoints);
+  }
+
+  private calculateFlawlessStreak(_profile: PlayerProfile, _gameMode: GameMode): number {
+    return 0;
+  }
+
   public canAdvanceElement(profile: PlayerProfile): boolean {
     const currentElement = this.getElementBySymbol(profile.currentElement);
     const nextElement = this.getNextElementByAtomicNumber(currentElement.atomicNumber);
 
-    if (!nextElement) return false; // Already at max element
+    if (!nextElement) return false;
 
-    // Must have threshold defined to progress
     const threshold = this.getProgressionThreshold(profile.currentElement, nextElement.symbol);
-    if (!threshold) {
-      return false; // No progression path defined
-    }
+    if (!threshold) return false;
 
     const puzzlesCompletedTowardNext =
       profile.level.atomicWeight - this.getPreviousThresholdTotal(profile.currentElement);
@@ -51,11 +169,7 @@ export class ProgressionService {
     return puzzlesCompletedTowardNext >= threshold.puzzlesRequired;
   }
 
-  /**
-   * Advances the player to the next element if requirements are met
-   */
   public advanceElement(profile: PlayerProfile): PlayerProfile {
-    // Must pass all progression checks to advance
     if (!this.canAdvanceElement(profile)) return profile;
 
     const currentElement = this.getElementBySymbol(profile.currentElement);
@@ -73,21 +187,13 @@ export class ProgressionService {
       level: {
         ...profile.level,
         atomicNumber: profile.level.atomicNumber + 1,
-        atomicWeight: 0, // Reset atomicWeight when advancing to new element
+        atomicWeight: 0,
       },
     };
 
-    // Check if this advances to a new period and update gameLab if needed
-    if (nextElement.period > currentElement.period) {
-      return this.handlePeriodAdvancement(
-        updatedProfile,
-        nextElement,
-        currentElement,
-        transitionService
-      );
-    }
-
-    return updatedProfile;
+    return nextElement.period > currentElement.period
+      ? this.handlePeriodAdvancement(updatedProfile, nextElement, currentElement, transitionService)
+      : updatedProfile;
   }
 
   private createAdvanceTransition(
@@ -101,54 +207,15 @@ export class ProgressionService {
       toElement: nextElement.symbol,
       newLevel: {
         atomicNumber: profile.level.atomicNumber + 1,
-        atomicWeight: 0, // Reset atomicWeight when advancing to new element
+        atomicWeight: 0,
       },
     };
   }
 
-  /**
-   * Handles advancement to a new period in the periodic table
-   * @param updatedProfile The player's profile with updated element
-   * @param nextElement The element being advanced to
-   * @param currentElement Reserved for future use in transition animations and progress tracking
-   * @param transitionService Service for managing transition effects
-   */
-  private handlePeriodAdvancement(
-    updatedProfile: PlayerProfile,
-    nextElement: Element,
-    _currentElement: Element,
-    transitionService: TransitionService
-  ): PlayerProfile {
-    updatedProfile.level.gameLab++;
-
-    const periodTransition: PeriodCompleteTransition = {
-      type: TransitionType.PERIOD_COMPLETE,
-      periodNumber: nextElement.period,
-      // Explicitly check if the array exists and is not empty
-      unlockedGameModes: Array.isArray(this.periodGameUnlocks[nextElement.period])
-        ? this.periodGameUnlocks[nextElement.period]
-        : [],
-    };
-
-    transitionService.createTransition(TransitionType.PERIOD_COMPLETE, periodTransition);
-
-    return this.unlockPeriodGames(updatedProfile, nextElement.period);
-  }
-
-  /**
-   * Awards atomic weight to the player and checks for element advancement
-   * @param profile The player's profile
-   * @param atomicWeightAwarded The amount of atomic weight to award
-   * @returns Updated player profile
-   */
   public awardAtomicWeight(profile: PlayerProfile, atomicWeightAwarded: number): PlayerProfile {
-    if (atomicWeightAwarded <= 0) {
-      return profile; // No atomic weight awarded
-    }
+    if (atomicWeightAwarded <= 0) return profile;
 
     const transitionService = TransitionService.getInstance();
-
-    // Create atomic weight awarded transition
     const awardTransition: AtomicWeightAwardedTransition = {
       type: TransitionType.ATOMIC_WEIGHT_AWARDED,
       amount: atomicWeightAwarded,
@@ -158,7 +225,6 @@ export class ProgressionService {
 
     transitionService.createTransition(TransitionType.ATOMIC_WEIGHT_AWARDED, awardTransition);
 
-    // Update profile with new atomic weight
     const updatedProfile = {
       ...profile,
       level: {
@@ -167,36 +233,46 @@ export class ProgressionService {
       },
     };
 
-    // Check if player can advance to next element and handle advancement if possible
     return this.canAdvanceElement(updatedProfile)
       ? this.advanceElement(updatedProfile)
       : updatedProfile;
   }
 
-  /**
-   * Unlocks games associated with reaching a new period
-   */
+  private handlePeriodAdvancement(
+    updatedProfile: PlayerProfile,
+    nextElement: Element,
+    currentElement: Element,
+    transitionService: TransitionService
+  ): PlayerProfile {
+    updatedProfile.level.gameLab++;
+
+    const periodTransition: PeriodCompleteTransition = {
+      type: TransitionType.PERIOD_COMPLETE,
+      periodNumber: nextElement.period,
+      unlockedGameModes: Array.isArray(this.periodGameUnlocks[nextElement.period])
+        ? this.periodGameUnlocks[nextElement.period]
+        : [],
+    };
+
+    transitionService.createTransition(TransitionType.PERIOD_COMPLETE, periodTransition);
+    return this.unlockPeriodGames(updatedProfile, nextElement.period);
+  }
+
   public unlockPeriodGames(profile: PlayerProfile, period?: number): PlayerProfile {
     const currentElement = this.getElementBySymbol(profile.currentElement);
-
-    // Get games to unlock for this period
     const periodToUse = period ?? currentElement.period;
     const availableGames = this.periodGameUnlocks[periodToUse];
     const gamesToUnlock = availableGames ?? [];
 
     const transitionService = TransitionService.getInstance();
-
-    // Add any new games not already unlocked
     const updatedUnlockedGames = [...profile.unlockedGames];
 
-    gamesToUnlock.forEach((gameMode: GameMode) => {
+    gamesToUnlock.forEach(gameMode => {
       if (!updatedUnlockedGames.includes(gameMode)) {
-        // Create transition for each newly unlocked game mode
         const unlockTransition: GameModeUnlockTransition = {
           type: TransitionType.GAME_MODE_UNLOCK,
           gameMode,
         };
-
         transitionService.createTransition(TransitionType.GAME_MODE_UNLOCK, unlockTransition);
         updatedUnlockedGames.push(gameMode);
       }
@@ -208,14 +284,25 @@ export class ProgressionService {
     };
   }
 
-  /**
-   * Calculates puzzles needed to advance to next element
-   */
+  public isGameModeUnlocked(profile: PlayerProfile, gameMode: GameMode): boolean {
+    return profile.unlockedGames.includes(gameMode);
+  }
+
+  public unlockGameMode(profile: PlayerProfile, gameMode: GameMode): PlayerProfile {
+    if (this.isGameModeUnlocked(profile, gameMode)) {
+      return profile;
+    }
+
+    return {
+      ...profile,
+      unlockedGames: [...profile.unlockedGames, gameMode],
+    };
+  }
+
   public calculateRequiredPuzzles(currentElement: ElementSymbol): number {
     const element = this.getElementBySymbol(currentElement);
     const nextElement = this.getNextElementByAtomicNumber(element.atomicNumber);
 
-    // For final element, use its threshold requirement or last defined threshold
     if (!nextElement) {
       const threshold = PROGRESSION_THRESHOLDS.find(t => t.fromElement === currentElement);
       if (threshold) {
@@ -228,132 +315,10 @@ export class ProgressionService {
     return threshold ? threshold.puzzlesRequired : 0;
   }
 
-  /**
-   * Checks if a game mode is unlocked for a player
-   */
-  public isGameModeUnlocked(profile: PlayerProfile, gameMode: GameMode): boolean {
-    return profile.unlockedGames.includes(gameMode);
-  }
-
-  /**
-   * Unlocks a specific game mode for a player
-   */
-  public unlockGameMode(profile: PlayerProfile, gameMode: GameMode): PlayerProfile {
-    if (this.isGameModeUnlocked(profile, gameMode)) {
-      return profile;
-    }
-
-    return {
-      ...profile,
-      unlockedGames: [...profile.unlockedGames, gameMode],
-    };
-  }
-
-  /**
-   * Gets detailed progress information for UI
-   */
-  public getPlayerProgress(profile: PlayerProfile): PlayerProgress {
-    const currentElement = this.getElementBySymbol(profile.currentElement);
-    const nextElement = this.getNextElementByAtomicNumber(currentElement.atomicNumber);
-
-    // Calculate puzzles completed toward next element
-    const previousThresholdTotal = this.getPreviousThresholdTotal(profile.currentElement);
-    const puzzlesCompletedTowardNext = profile.level.atomicWeight - previousThresholdTotal;
-
-    // Calculate puzzles required for next element
-    const puzzlesRequiredForNext = nextElement
-      ? this.calculateRequiredPuzzles(profile.currentElement)
-      : 0;
-
-    // Calculate percentage to next element
-    const percentToNextElement =
-      puzzlesRequiredForNext > 0
-        ? Math.min(100, (puzzlesCompletedTowardNext / puzzlesRequiredForNext) * 100)
-        : 100;
-
-    // Get elements in current period
-    const elementsInCurrentPeriod = ELEMENTS_DATA.filter(
-      element => element.period === currentElement.period
-    ).map(element => element.symbol);
-
-    // Get periods unlocked
-    const maxPeriodUnlocked = Math.max(
-      ...ELEMENTS_DATA.filter(
-        element =>
-          ELEMENTS_DATA.findIndex(e => e.symbol === element.symbol) <=
-          ELEMENTS_DATA.findIndex(e => e.symbol === profile.currentElement)
-      ).map(element => element.period)
-    );
-
-    return {
-      currentElement: profile.currentElement,
-      totalPuzzlesCompleted: profile.level.atomicWeight,
-      puzzlesCompletedTowardNext,
-      puzzlesRequiredForNext,
-      percentToNextElement,
-      currentPeriod: currentElement.period,
-      elementsInCurrentPeriod,
-      periodsUnlocked: maxPeriodUnlocked,
-    };
-  }
-
-  /**
-   * Calculate percentage progress to next element
-   */
-  public getPercentToNextElement(profile: PlayerProfile): number {
-    const currentElement = this.getElementBySymbol(profile.currentElement);
-    const nextElement = this.getNextElementByAtomicNumber(currentElement.atomicNumber);
-
-    if (!nextElement) return 100; // Already at max element
-
-    const threshold = this.getProgressionThreshold(profile.currentElement, nextElement.symbol);
-    if (!threshold) return 0;
-
-    const previousTotal = this.getPreviousThresholdTotal(profile.currentElement);
-    const puzzlesCompletedTowardNext = profile.level.atomicWeight - previousTotal;
-
-    return Math.min(
-      100,
-      Math.floor((puzzlesCompletedTowardNext / threshold.puzzlesRequired) * 100)
-    );
-  }
-
-  /**
-   * Get information about the current period progress
-   */
-  public getPeriodProgress(profile: PlayerProfile): {
-    currentPeriod: number;
-    elementsInPeriod: ElementSymbol[];
-    completedInPeriod: number;
-  } {
-    const currentElement = this.getElementBySymbol(profile.currentElement);
-    const period = currentElement.period;
-
-    // Get all elements in this period
-    const elementsInPeriod = ELEMENTS_DATA.filter(element => element.period === period).map(
-      element => element.symbol
-    );
-
-    // Count completed elements in this period
-    const completedInPeriod = ELEMENTS_DATA.filter(
-      element => element.period === period && element.atomicNumber <= currentElement.atomicNumber
-    ).length;
-
-    return {
-      currentPeriod: period,
-      elementsInPeriod,
-      completedInPeriod,
-    };
-  }
-
-  /**
-   * Gets the total number of puzzles required to reach a specific element
-   */
   private getPreviousThresholdTotal(elementSymbol: ElementSymbol): number {
     const element = this.getElementBySymbol(elementSymbol);
     let total = 0;
 
-    // Sum up all thresholds before this element
     PROGRESSION_THRESHOLDS.forEach(threshold => {
       const toElement = this.getElementBySymbol(threshold.toElement);
       if (toElement.atomicNumber < element.atomicNumber) {
@@ -364,22 +329,15 @@ export class ProgressionService {
     return total;
   }
 
-  /**
-   * Gets the progression threshold between two elements
-   */
   private getProgressionThreshold(
     fromElement: ElementSymbol,
     toElement: ElementSymbol
   ): ProgressThreshold | undefined {
-    // Check if the threshold exists
     return PROGRESSION_THRESHOLDS.find(
       t => t.fromElement === fromElement && t.toElement === toElement
     );
   }
 
-  /**
-   * Gets an element by its symbol
-   */
   private getElementBySymbol(symbol: ElementSymbol): Element {
     const element = ELEMENTS_DATA.find(element => element.symbol === symbol);
 
@@ -390,9 +348,6 @@ export class ProgressionService {
     return element;
   }
 
-  /**
-   * Gets the next element by atomic number
-   */
   private getNextElementByAtomicNumber(currentAtomicNumber: number): Element | undefined {
     return ELEMENTS_DATA.find(element => element.atomicNumber === currentAtomicNumber + 1);
   }
