@@ -37,7 +37,7 @@ graph TD
 
 ## Document Template
 
-````markdown
+```markdown
 # [TOPIC] Handoff - [DATE]
 
 ## Summary
@@ -74,7 +74,7 @@ graph TD
 
 - [doc/path1]
 - [doc/path2]
-````
+```
 
 ## Required Sections
 
