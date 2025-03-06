@@ -95,14 +95,14 @@ jobs:
       - name: Lint code
         run: pnpm run lint
 
-      # - name: Debug formatter issues
-      #   run: |
-      #     echo "Current file content:"
-      #     cat vitest.config.ts
-      #     echo "\n\nPrettier formatted version:"
-      #     npx prettier --write vitest.config.ts
-      #     echo "\n\nDiff between versions:"
-      #     git diff vitest.config.ts
+      - name: Debug formatter issues
+        run: |
+          echo "Current file content:"
+          cat vitest.config.ts
+          echo "\n\nPrettier formatted version:"
+          npx prettier --write vitest.config.ts
+          echo "\n\nDiff between versions:"
+          git diff vitest.config.ts
 
       - name: Format check
         run: pnpm run format:check
