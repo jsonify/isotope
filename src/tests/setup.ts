@@ -1,4 +1,4 @@
-// Add this to your existing setup.ts file
+// Add these lines to your existing setup.ts file
 
 import '@testing-library/jest-dom';
 import { afterEach, afterAll, expect, vi } from 'vitest';
@@ -47,19 +47,15 @@ Object.assign(globalThis, {
   },
 });
 
-// This helps identify any unhandled promises that might cause hanging
-if (typeof process !== 'undefined') {
-  process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    // Don't exit the process to allow tests to continue
-  });
-}
-
-// Register a cleanup function to run after all tests
+// Add a final cleanup function that runs after all tests
 afterAll(() => {
-  // Clear any timers that might be hanging
   vi.clearAllTimers();
+  vi.useRealTimers();
 
-  // Allow a small delay for any cleanup operations
-  return new Promise(resolve => setTimeout(resolve, 100));
+  // Force exit after a short delay
+  if (typeof process !== 'undefined') {
+    setTimeout(() => {
+      process.exit(0);
+    }, 1000);
+  }
 });

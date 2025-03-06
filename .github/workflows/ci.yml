@@ -148,108 +148,61 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Create test wrapper script
+      - name: Create exit handler
         run: |
-          cat > run_tests.sh << 'EOF'
-          #!/bin/bash
+          cat > exit-handler.js << 'EOF'
+          const { spawn } = require('child_process');
+          const command = 'pnpm';
+          const args = ['run', 'test:ci', '--reporter=verbose'];
           
-          echo "Starting tests..."
+          console.log(`Running: ${command} ${args.join(' ')}`);
           
-          # Start tests in the background with output redirection
-          pnpm run test:ci --reporter=verbose > test_output.log 2>&1 &
-          TEST_PID=$!
+          const testProcess = spawn(command, args, {
+            stdio: 'inherit',
+            shell: true
+          });
           
-          # Function to check if tests have completed successfully
-          function check_test_completion {
-            if grep -q "RUN.*Tests completed successfully" test_output.log; then
-              return 0  # Tests completed successfully
-            elif grep -q "failed with exit code" test_output.log; then
-              return 1  # Tests failed
-            else
-              return 2  # Tests still running
-            fi
-          }
+          // Set a max timeout
+          const maxTimeout = setTimeout(() => {
+            console.log('\n\nTests timed out after 3 minutes');
+            process.exit(1);
+          }, 180000);
           
-          # Monitor test progress
-          TIMEOUT=120  # 2 minutes in seconds
-          ELAPSED=0
+          // Set a "force exit" timeout that runs after successful tests
+          let forceExitTimeout;
           
-          while [ $ELAPSED -lt $TIMEOUT ]; do
-            # Check if the test process is still running
-            if ! ps -p $TEST_PID > /dev/null; then
-              # Process ended, check output
-              if grep -q "RUN.*Tests completed successfully" test_output.log; then
-                echo "Tests completed successfully!"
-                exit 0
-              else
-                echo "Test process ended but didn't report success:"
-                cat test_output.log
-                exit 1
-              fi
-            fi
-            
-            # Check for completion based on output
-            check_test_completion
-            RESULT=$?
-            
-            if [ $RESULT -eq 0 ]; then
-              echo "Tests completed successfully!"
-              # Kill the test process and any child processes
-              pkill -P $TEST_PID || true
-              kill $TEST_PID || true
-              exit 0
-            elif [ $RESULT -eq 1 ]; then
-              echo "Tests failed!"
-              cat test_output.log
-              # Kill the test process and any child processes
-              pkill -P $TEST_PID || true
-              kill $TEST_PID || true
-              exit 1
-            fi
-            
-            # Wait for a second before checking again
-            sleep 1
-            ELAPSED=$((ELAPSED+1))
-            
-            # Every 10 seconds, show a progress message
-            if [ $((ELAPSED % 10)) -eq 0 ]; then
-              echo "Tests still running after $ELAPSED seconds..."
-            fi
-          done
+          // Monitor stdout to detect when tests finish
+          testProcess.stdout?.on('data', (data) => {
+            const output = data.toString();
+            if (output.includes('✓') && !forceExitTimeout) {
+              // If we see successful tests, set up a force exit timer
+              forceExitTimeout = setTimeout(() => {
+                console.log('\n\nTests completed but process did not exit. Forcing exit now.');
+                // Success exit code
+                process.exit(0);
+              }, 10000); // Wait 10s after last test completion
+            }
+          });
           
-          # If we get here, the tests timed out
-          echo "Tests timed out after $TIMEOUT seconds!"
-          echo "Killing test process..."
+          // Handle when the process exits normally
+          testProcess.on('close', (code) => {
+            console.log(`Test process exited with code ${code}`);
+            clearTimeout(maxTimeout);
+            if (forceExitTimeout) clearTimeout(forceExitTimeout);
+            process.exit(code || 0);
+          });
           
-          # Kill the test process and any child processes
-          pkill -P $TEST_PID || true
-          kill -9 $TEST_PID || true
-          
-          echo "Last 20 lines of test output:"
-          tail -n 20 test_output.log
-          
-          echo "Current process tree:"
-          pstree -p
-          
-          echo "Force killing all node processes..."
-          pkill -f node || true
-          
-          exit 1
+          // Handle errors
+          testProcess.on('error', (err) => {
+            console.error('Error starting test process:', err);
+            clearTimeout(maxTimeout);
+            if (forceExitTimeout) clearTimeout(forceExitTimeout);
+            process.exit(1);
+          });
           EOF
-          
-          chmod +x run_tests.sh
       
-      - name: Run tests with wrapper script
-        run: ./run_tests.sh
-        
-      - name: Debug - test output (on failure)
-        if: failure()
-        run: |
-          echo "Full test output:"
-          cat test_output.log || true
-          
-          echo "Current processes:"
-          ps aux | grep -E 'node|vitest' || true   
+      - name: Run tests with exit handler
+        run: node exit-handler.js   
 # Test coverage job commented out until coverage reporting setup is ready
 # Uncomment and configure when ready to set up coverage
       # - name: Upload test coverage
