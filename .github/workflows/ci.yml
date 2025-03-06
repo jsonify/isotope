@@ -140,7 +140,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Run unit and integration tests
-        run: pnpm run test:ci || exit 1
+        run: |
+            pnpm run test:ci --silent=false --logLevel=info || (echo "Tests failed with exit code $?" && exit 1)
          
 # Test coverage job commented out until coverage reporting setup is ready
 # Uncomment and configure when ready to set up coverage
