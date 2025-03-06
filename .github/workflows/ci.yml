@@ -95,15 +95,15 @@ jobs:
       - name: Lint code
         run: pnpm run lint
 
-      - name: Debug formatter issues
-        run: |
-          echo "Current file content:"
-          cat vitest.config.ts
-          echo "\n\nPrettier formatted version:"
-          npx prettier --write vitest.config.ts
-          echo "\n\nDiff between versions:"
-          git diff vitest.config.ts
-          
+      # - name: Debug formatter issues
+      #   run: |
+      #     echo "Current file content:"
+      #     cat vitest.config.ts
+      #     echo "\n\nPrettier formatted version:"
+      #     npx prettier --write vitest.config.ts
+      #     echo "\n\nDiff between versions:"
+      #     git diff vitest.config.ts
+
       - name: Format check
         run: pnpm run format:check
 
@@ -150,7 +150,7 @@ jobs:
       
       - name: Run unit and integration tests
         run: |
-            pnpm run test:ci --silent=false --logLevel=info || (echo "Tests failed with exit code $?" && exit 1)
+            pnpm run test:ci --reporter=verbose || (echo "Tests failed with exit code $?" && exit 1)
          
 # Test coverage job commented out until coverage reporting setup is ready
 # Uncomment and configure when ready to set up coverage
