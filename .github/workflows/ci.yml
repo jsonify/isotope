@@ -139,7 +139,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Run unit and integration tests
-        run: pnpm run test
+        run: pnpm run test:ci
          
 # Test coverage job commented out until coverage reporting setup is ready
 # Uncomment and configure when ready to set up coverage
