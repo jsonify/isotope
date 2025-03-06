@@ -7,8 +7,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/tests/setup.ts',
     pool: 'forks',
-    poolOptions: { threads: { singleThread: true } },
-    teardownTimeout: 10000
+    poolOptions: {
+      threads: { singleThread: true },
+    },
+    teardownTimeout: 10000,
   },
   resolve: {
     alias: {
