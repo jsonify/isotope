@@ -332,7 +332,7 @@ export class ProgressionService {
   private handlePeriodAdvancement(
     updatedProfile: PlayerProfile,
     nextElement: Element,
-    currentElement: Element,
+    _currentElement: Element,
     transitionService: TransitionService
   ): PlayerProfile {
     if (!isProfileDefined(updatedProfile) || !isDefined(nextElement)) return updatedProfile;
