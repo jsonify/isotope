@@ -6,18 +6,23 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/tests/setup.ts',
-    pool: 'forks', // Changed from 'threads' to 'forks' for better process management
+    // Use singleThread instead of threads for Vitest 3.x
+    singleThread: true,
+    // Configure pool to run with minimal threads
+    pool: 'threads',
     poolOptions: {
-      forks: {
-        isolate: true,
+      threads: {
+        singleThread: true,
       },
     },
-    teardownTimeout: 5000, // Reduced from 10000
-    testTimeout: 10000, // Reduced from 15000
-    hookTimeout: 10000, // Added explicit hook timeout
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    teardownTimeout: 5000,
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    // Use proper exclude configuration instead of watchExclude
+    fileParallelism: {
+      exclude: ['**/node_modules/**', '**/dist/**'],
+    },
     clearMocks: true,
-    // forceExit: true, // Force exit after tests complete
   },
   resolve: {
     alias: {

@@ -1,5 +1,7 @@
+// Add this to your existing setup.ts file
+
 import '@testing-library/jest-dom';
-import { afterEach, expect, vi } from 'vitest';
+import { afterEach, afterAll, expect, vi } from 'vitest';
 
 // Set up browser globals for test environment
 if (typeof window === 'undefined') {
@@ -43,4 +45,21 @@ Object.assign(globalThis, {
   jest: {
     spyOn: vi.spyOn,
   },
+});
+
+// This helps identify any unhandled promises that might cause hanging
+if (typeof process !== 'undefined') {
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Don't exit the process to allow tests to continue
+  });
+}
+
+// Register a cleanup function to run after all tests
+afterAll(() => {
+  // Clear any timers that might be hanging
+  vi.clearAllTimers();
+
+  // Allow a small delay for any cleanup operations
+  return new Promise(resolve => setTimeout(resolve, 100));
 });

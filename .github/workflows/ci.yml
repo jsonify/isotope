@@ -148,53 +148,108 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Run unit and integration tests
+      - name: Create test wrapper script
         run: |
-          # Set a timeout for the test process
-          timeout 2m bash -c '
-            # Run tests and capture the exit code
-            pnpm run test:ci --reporter=verbose
-            exit_code=$?
-            
-            # Store the exit code for later use
-            echo $exit_code > test_exit_code.txt
-            
-            # Exit with the same code as the test
-            exit $exit_code
-          ' || timeout_code=$?
+          cat > run_tests.sh << 'EOF'
+          #!/bin/bash
           
-          # Check if we timed out
-          if [ "${timeout_code:-0}" -eq 124 ]; then
-            echo "Tests timed out after 2 minutes! Likely hanging processes."
-            # List all node processes
-            echo "Current Node processes:"
-            ps aux | grep node
-            # Force kill any lingering Node processes
-            pkill -f "vitest" || true
-            pkill -f "node" || true
-            exit 1
-          fi
+          echo "Starting tests..."
           
-          # Get the test exit code if available
-          if [ -f test_exit_code.txt ]; then
-            test_exit_code=$(cat test_exit_code.txt)
-            rm test_exit_code.txt
-            
-            if [ "$test_exit_code" -ne 0 ]; then
-              echo "Tests failed with exit code $test_exit_code"
-              exit $test_exit_code
+          # Start tests in the background with output redirection
+          pnpm run test:ci --reporter=verbose > test_output.log 2>&1 &
+          TEST_PID=$!
+          
+          # Function to check if tests have completed successfully
+          function check_test_completion {
+            if grep -q "RUN.*Tests completed successfully" test_output.log; then
+              return 0  # Tests completed successfully
+            elif grep -q "failed with exit code" test_output.log; then
+              return 1  # Tests failed
+            else
+              return 2  # Tests still running
             fi
-          fi
+          }
           
-          echo "Tests completed successfully!"
+          # Monitor test progress
+          TIMEOUT=120  # 2 minutes in seconds
+          ELAPSED=0
+          
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            # Check if the test process is still running
+            if ! ps -p $TEST_PID > /dev/null; then
+              # Process ended, check output
+              if grep -q "RUN.*Tests completed successfully" test_output.log; then
+                echo "Tests completed successfully!"
+                exit 0
+              else
+                echo "Test process ended but didn't report success:"
+                cat test_output.log
+                exit 1
+              fi
+            fi
+            
+            # Check for completion based on output
+            check_test_completion
+            RESULT=$?
+            
+            if [ $RESULT -eq 0 ]; then
+              echo "Tests completed successfully!"
+              # Kill the test process and any child processes
+              pkill -P $TEST_PID || true
+              kill $TEST_PID || true
+              exit 0
+            elif [ $RESULT -eq 1 ]; then
+              echo "Tests failed!"
+              cat test_output.log
+              # Kill the test process and any child processes
+              pkill -P $TEST_PID || true
+              kill $TEST_PID || true
+              exit 1
+            fi
+            
+            # Wait for a second before checking again
+            sleep 1
+            ELAPSED=$((ELAPSED+1))
+            
+            # Every 10 seconds, show a progress message
+            if [ $((ELAPSED % 10)) -eq 0 ]; then
+              echo "Tests still running after $ELAPSED seconds..."
+            fi
+          done
+          
+          # If we get here, the tests timed out
+          echo "Tests timed out after $TIMEOUT seconds!"
+          echo "Killing test process..."
+          
+          # Kill the test process and any child processes
+          pkill -P $TEST_PID || true
+          kill -9 $TEST_PID || true
+          
+          echo "Last 20 lines of test output:"
+          tail -n 20 test_output.log
+          
+          echo "Current process tree:"
+          pstree -p
+          
+          echo "Force killing all node processes..."
+          pkill -f node || true
+          
+          exit 1
+          EOF
+          
+          chmod +x run_tests.sh
       
-      # Add a debugging step that always runs
-      - name: Debug - Check for hanging processes
-        if: always()
+      - name: Run tests with wrapper script
+        run: ./run_tests.sh
+        
+      - name: Debug - test output (on failure)
+        if: failure()
         run: |
-          echo "Current Node processes:"
-          ps aux | grep node || true
-             
+          echo "Full test output:"
+          cat test_output.log || true
+          
+          echo "Current processes:"
+          ps aux | grep -E 'node|vitest' || true   
 # Test coverage job commented out until coverage reporting setup is ready
 # Uncomment and configure when ready to set up coverage
       # - name: Upload test coverage
