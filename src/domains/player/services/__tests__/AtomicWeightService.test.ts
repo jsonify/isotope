@@ -96,7 +96,7 @@ describe('atomic weight service', () => {
   describe('perfect solve and time bonuses', () => {
     describe('perfect solve bonuses', () => {
       it('should apply perfect solve multiplier correctly', () => {
-        const regularResult = createTestResult(false);
+        const regularResult = createTestResult({ isPerfect: false });
         const perfectResult = createTestResult({ isPerfect: true });
         const puzzle = createTestPuzzle();
 

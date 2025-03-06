@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { afterEach, expect, vi } from 'vitest';
+import { afterEach, afterAll, expect, vi } from 'vitest';
 
 // Set up browser globals for test environment
 if (typeof window === 'undefined') {
@@ -44,3 +44,13 @@ Object.assign(globalThis, {
     spyOn: vi.spyOn,
   },
 });
+
+// Add a final cleanup function that runs after all tests
+afterAll(() => {
+  // Clear any timers that might be hanging
+  vi.clearAllTimers();
+  vi.useRealTimers();
+
+  // We don't use process.exit here as it would break when running tests locally
+  // The CI will use the exit-handler.js script to handle forced exit
+}, 5000);

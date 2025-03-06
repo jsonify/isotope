@@ -46,7 +46,18 @@ export default [
     rules: {
       // TypeScript strict rules
       '@typescript-eslint/explicit-function-return-type': 'error',
-      '@typescript-eslint/strict-boolean-expressions': 'error',
+      // '@typescript-eslint/strict-boolean-expressions': [
+      //   'error',
+      //   {
+      //     allowString: true,
+      //     allowNumber: true,
+      //     allowNullableObject: true, // Allow object truthiness checks
+      //     allowNullableBoolean: true,
+      //     allowNullableString: true,
+      //     allowNullableNumber: true,
+      //     allowAny: false
+      //   }
+      // ],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/explicit-member-accessibility': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],

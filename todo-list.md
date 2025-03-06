@@ -36,7 +36,7 @@
 - [x] Create element transition logic
 - [x] Implement the AN tracking calculations
 - [x] Implement the AW tracking calculations
-- [ ] Implement the GL unlocking system
+- [x] Implement the GL unlocking system
 - [ ] Create period-based progress calculations
 - [ ] Implement save/load functionality
 - [ ] Write unit tests for progression logic

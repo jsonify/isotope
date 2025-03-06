@@ -1,7 +1,11 @@
 // src/domains/player/services/ProgressionService.ts
 
 import { AtomicWeightService } from './AtomicWeightService';
-import { ELEMENTS_DATA, PROGRESSION_THRESHOLDS } from '../../shared/constants/game-constants';
+import {
+  ELEMENTS_DATA,
+  PROGRESSION_THRESHOLDS,
+  GAME_MODE_INFO,
+} from '../../shared/constants/game-constants';
 import type {
   ElementSymbol,
   PlayerProfile,
@@ -12,6 +16,11 @@ import type {
   PuzzleResult,
 } from '../../shared/models/domain-models';
 import { GameMode } from '../../shared/models/domain-models';
+import {
+  ProgressionEventEmitter,
+  ProgressionEventType,
+  type ProgressionEvent,
+} from '../../shared/models/progression-events';
 import type {
   ElementAdvanceTransition,
   GameModeUnlockTransition,
@@ -21,9 +30,37 @@ import type {
 import { TransitionType } from '../../shared/models/transition-models';
 import { TransitionService } from '../../shared/services/TransitionService';
 
+// Type guards for strict boolean expressions
+function isDefined<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
+
+function isCacheValid<T>(
+  cache: { timestamp: number; progress: T } | null | undefined,
+  ttl: number
+): cache is { timestamp: number; progress: T } {
+  return (
+    isDefined(cache) && typeof cache.timestamp === 'number' && Date.now() - cache.timestamp < ttl
+  );
+}
+
+function isProfileDefined(profile: PlayerProfile | null | undefined): profile is PlayerProfile {
+  return isDefined(profile);
+}
+
+interface PeriodProgressData {
+  currentPeriod: number;
+  elementsInPeriod: ElementSymbol[];
+  completedInPeriod: number;
+}
+
+interface CacheEntry {
+  progress: PeriodProgressData;
+  timestamp: number;
+}
+
 export class ProgressionService {
   private atomicWeightService: AtomicWeightService;
-
   private readonly periodGameUnlocks: Record<number, GameMode[]> = {
     1: [GameMode.TUTORIAL, GameMode.ELEMENT_MATCH],
     2: [GameMode.PERIODIC_SORT, GameMode.ELECTRON_SHELL],
@@ -34,18 +71,44 @@ export class ProgressionService {
     7: [GameMode.ELECTRON_FLOW],
   };
 
+  private periodProgressCache: Map<string, CacheEntry>;
+  private readonly CACHE_TTL = 5000; // 5 seconds cache time-to-live
+  private eventEmitter: ProgressionEventEmitter;
+
   public constructor() {
+    this.eventEmitter = ProgressionEventEmitter.getInstance();
     this.atomicWeightService = new AtomicWeightService();
+    this.periodProgressCache = new Map();
   }
 
   /**
-   * Get information about the current period progress
+   * Get cached progress data
    */
-  public getPeriodProgress(profile: PlayerProfile): {
-    currentPeriod: number;
-    elementsInPeriod: ElementSymbol[];
-    completedInPeriod: number;
-  } {
+  private getCachedProgress(key: string): CacheEntry | undefined {
+    return this.periodProgressCache.get(key);
+  }
+
+  /**
+   * Set progress data in cache
+   */
+  private setCachedProgress(key: string, progress: PeriodProgressData): void {
+    this.periodProgressCache.set(key, {
+      progress,
+      timestamp: Date.now(),
+    });
+  }
+
+  public getPeriodProgress(profile: PlayerProfile): PeriodProgressData {
+    // Check cache first
+    const cacheKey = `period_progress_${profile.id}_${profile.currentElement}`;
+    const cached = this.getCachedProgress(cacheKey);
+
+    // Use type guard instead of direct boolean condition
+    if (isCacheValid(cached, this.CACHE_TTL)) {
+      return cached.progress;
+    }
+
+    // Calculate if not in cache
     const currentElement = this.getElementBySymbol(profile.currentElement);
     const period = currentElement.period;
 
@@ -59,35 +122,54 @@ export class ProgressionService {
       element => element.period === period && element.atomicNumber <= profile.level.atomicNumber
     ).length;
 
-    return {
+    const progress: PeriodProgressData = {
       currentPeriod: period,
       elementsInPeriod,
       completedInPeriod,
     };
+
+    // Store in cache
+    this.setCachedProgress(cacheKey, progress);
+
+    return progress;
   }
 
   /**
    * Gets the percentage progress to the next element (0-100)
    */
+  private emitProgressionEvent(event: ProgressionEvent): void {
+    this.eventEmitter.emit(event);
+  }
+
+  /**
+   * Gets the game mode info for unlocking in a period
+   * @param period The period number
+   * @returns Array of game modes with their info
+   */
+  public getGameModesForPeriod(
+    period: number
+  ): { mode: GameMode; info: (typeof GAME_MODE_INFO)[GameMode] }[] {
+    const modes = this.periodGameUnlocks[period] ?? [];
+    return modes.map(mode => ({ mode, info: GAME_MODE_INFO[mode] }));
+  }
+
   public getPercentToNextElement(profile: PlayerProfile): number {
     const currentElement = this.getElementBySymbol(profile.currentElement);
-    const nextElement = this.getNextElementByAtomicNumber(currentElement.atomicNumber);
+    if (!currentElement) return 0;
 
+    const nextElement = this.getNextElementByAtomicNumber(currentElement.atomicNumber);
     if (!nextElement) {
       return 100; // Already at max element
     }
 
     const threshold = this.getProgressionThreshold(profile.currentElement, nextElement.symbol);
-    if (!threshold) {
-      return 0; // No valid threshold found
-    }
 
     const previousTotal = this.getPreviousThresholdTotal(profile.currentElement);
     const puzzlesCompletedTowardNext = profile.level.atomicWeight - previousTotal;
 
     return Math.min(
       100,
-      Math.round((puzzlesCompletedTowardNext / threshold.puzzlesRequired) * 100)
+      Math.round((puzzlesCompletedTowardNext / (threshold?.puzzlesRequired ?? 1)) * 100)
     );
   }
 
@@ -125,7 +207,6 @@ export class ProgressionService {
     };
   }
 
-  // ... (rest of the methods from previous implementation)
   public handlePuzzleCompletion(
     profile: PlayerProfile,
     puzzle: Puzzle,
@@ -225,6 +306,16 @@ export class ProgressionService {
 
     transitionService.createTransition(TransitionType.ATOMIC_WEIGHT_AWARDED, awardTransition);
 
+    // Emit atomic weight gained event
+    this.emitProgressionEvent({
+      type: ProgressionEventType.ATOMIC_WEIGHT_GAINED,
+      playerId: profile.id,
+      amount: atomicWeightAwarded,
+      totalWeight: profile.level.atomicWeight + atomicWeightAwarded,
+      element: profile.currentElement,
+      timestamp: Date.now(),
+    });
+
     const updatedProfile = {
       ...profile,
       level: {
@@ -241,55 +332,86 @@ export class ProgressionService {
   private handlePeriodAdvancement(
     updatedProfile: PlayerProfile,
     nextElement: Element,
-    currentElement: Element,
+    _currentElement: Element,
     transitionService: TransitionService
   ): PlayerProfile {
+    if (!isProfileDefined(updatedProfile) || !isDefined(nextElement)) return updatedProfile;
+
     updatedProfile.level.gameLab++;
+    this.clearPeriodProgressCache(updatedProfile.id);
 
     const periodTransition: PeriodCompleteTransition = {
       type: TransitionType.PERIOD_COMPLETE,
       periodNumber: nextElement.period,
-      unlockedGameModes: Array.isArray(this.periodGameUnlocks[nextElement.period])
-        ? this.periodGameUnlocks[nextElement.period]
-        : [],
+      unlockedGameModes: this.periodGameUnlocks[nextElement.period] ?? [],
     };
 
     transitionService.createTransition(TransitionType.PERIOD_COMPLETE, periodTransition);
+
+    // Emit period completed event
+    this.emitProgressionEvent({
+      type: ProgressionEventType.PERIOD_COMPLETED,
+      playerId: updatedProfile.id,
+      periodNumber: nextElement.period,
+      unlockedGameModes: this.periodGameUnlocks[nextElement.period] ?? [],
+      timestamp: Date.now(),
+    });
+
     return this.unlockPeriodGames(updatedProfile, nextElement.period);
   }
 
+  /**
+   * Unlock games for a specific period
+   * @param profile Player profile to update
+   * @param period Optional period number, uses current period if not specified
+   */
   public unlockPeriodGames(profile: PlayerProfile, period?: number): PlayerProfile {
+    if (!isProfileDefined(profile)) return profile;
+
     const currentElement = this.getElementBySymbol(profile.currentElement);
     const periodToUse = period ?? currentElement.period;
-    const availableGames = this.periodGameUnlocks[periodToUse];
-    const gamesToUnlock = availableGames ?? [];
+    const availableGames = this.periodGameUnlocks[periodToUse] ?? [];
+    const newlyUnlockedGames = availableGames.filter(
+      gameMode => !profile.unlockedGames.includes(gameMode)
+    );
 
     const transitionService = TransitionService.getInstance();
-    const updatedUnlockedGames = [...profile.unlockedGames];
 
-    gamesToUnlock.forEach(gameMode => {
-      if (!updatedUnlockedGames.includes(gameMode)) {
-        const unlockTransition: GameModeUnlockTransition = {
-          type: TransitionType.GAME_MODE_UNLOCK,
-          gameMode,
-        };
-        transitionService.createTransition(TransitionType.GAME_MODE_UNLOCK, unlockTransition);
-        updatedUnlockedGames.push(gameMode);
-      }
+    // Create transitions and emit events for newly unlocked games
+    newlyUnlockedGames.forEach(gameMode => {
+      const unlockTransition: GameModeUnlockTransition = {
+        type: TransitionType.GAME_MODE_UNLOCK,
+        gameMode,
+      };
+      transitionService.createTransition(TransitionType.GAME_MODE_UNLOCK, unlockTransition);
+
+      // Emit game mode unlocked event
+      this.emitProgressionEvent({
+        type: ProgressionEventType.GAME_MODE_UNLOCKED,
+        playerId: profile.id,
+        gameMode,
+        period: periodToUse,
+        timestamp: Date.now(),
+      });
     });
 
     return {
       ...profile,
-      unlockedGames: updatedUnlockedGames,
+      unlockedGames: [...profile.unlockedGames, ...newlyUnlockedGames],
     };
   }
 
   public isGameModeUnlocked(profile: PlayerProfile, gameMode: GameMode): boolean {
-    return profile.unlockedGames.includes(gameMode);
+    return (
+      isProfileDefined(profile) &&
+      Array.isArray(profile.unlockedGames) &&
+      profile.unlockedGames.includes(gameMode)
+    );
   }
 
   public unlockGameMode(profile: PlayerProfile, gameMode: GameMode): PlayerProfile {
-    if (this.isGameModeUnlocked(profile, gameMode)) {
+    // Use type guard for profile validation
+    if (!isProfileDefined(profile) || this.isGameModeUnlocked(profile, gameMode)) {
       return profile;
     }
 
@@ -301,18 +423,20 @@ export class ProgressionService {
 
   public calculateRequiredPuzzles(currentElement: ElementSymbol): number {
     const element = this.getElementBySymbol(currentElement);
+    if (!element) return 0;
+
     const nextElement = this.getNextElementByAtomicNumber(element.atomicNumber);
 
     if (!nextElement) {
       const threshold = PROGRESSION_THRESHOLDS.find(t => t.fromElement === currentElement);
-      if (threshold) {
-        return threshold.puzzlesRequired;
-      }
-      return PROGRESSION_THRESHOLDS[PROGRESSION_THRESHOLDS.length - 1].puzzlesRequired;
+      return (
+        threshold?.puzzlesRequired ??
+        PROGRESSION_THRESHOLDS[PROGRESSION_THRESHOLDS.length - 1].puzzlesRequired
+      );
     }
 
     const threshold = this.getProgressionThreshold(currentElement, nextElement.symbol);
-    return threshold ? threshold.puzzlesRequired : 0;
+    return threshold === null || threshold === undefined ? 0 : threshold.puzzlesRequired;
   }
 
   private getPreviousThresholdTotal(elementSymbol: ElementSymbol): number {
@@ -321,7 +445,7 @@ export class ProgressionService {
 
     PROGRESSION_THRESHOLDS.forEach(threshold => {
       const toElement = this.getElementBySymbol(threshold.toElement);
-      if (toElement.atomicNumber < element.atomicNumber) {
+      if (toElement?.atomicNumber < element?.atomicNumber) {
         total += threshold.puzzlesRequired;
       }
     });
@@ -350,5 +474,14 @@ export class ProgressionService {
 
   private getNextElementByAtomicNumber(currentAtomicNumber: number): Element | undefined {
     return ELEMENTS_DATA.find(element => element.atomicNumber === currentAtomicNumber + 1);
+  }
+
+  /**
+   * Clear period progress cache for a player
+   * @param playerId The ID of the player whose cache to clear
+   */
+  private clearPeriodProgressCache(_playerId: string): void {
+    // Clear all cached data for this player
+    this.periodProgressCache.clear();
   }
 }
