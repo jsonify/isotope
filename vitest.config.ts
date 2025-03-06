@@ -6,12 +6,18 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/tests/setup.ts',
-    pool: 'threads',
+    pool: 'forks', // Changed from 'threads' to 'forks' for better process management
     poolOptions: {
-      threads: { singleThread: false },
+      forks: {
+        isolate: true,
+      },
     },
-    teardownTimeout: 10000,
-    testTimeout: 15000
+    teardownTimeout: 5000, // Reduced from 10000
+    testTimeout: 10000, // Reduced from 15000
+    hookTimeout: 10000, // Added explicit hook timeout
+    exclude: ['**/node_modules/**', '**/dist/**'],
+    clearMocks: true,
+    // forceExit: true, // Force exit after tests complete
   },
   resolve: {
     alias: {

@@ -150,8 +150,51 @@ jobs:
       
       - name: Run unit and integration tests
         run: |
-            pnpm run test:ci --reporter=verbose || (echo "Tests failed with exit code $?" && exit 1)
-         
+          # Set a timeout for the test process
+          timeout 2m bash -c '
+            # Run tests and capture the exit code
+            pnpm run test:ci --reporter=verbose
+            exit_code=$?
+            
+            # Store the exit code for later use
+            echo $exit_code > test_exit_code.txt
+            
+            # Exit with the same code as the test
+            exit $exit_code
+          ' || timeout_code=$?
+          
+          # Check if we timed out
+          if [ "${timeout_code:-0}" -eq 124 ]; then
+            echo "Tests timed out after 2 minutes! Likely hanging processes."
+            # List all node processes
+            echo "Current Node processes:"
+            ps aux | grep node
+            # Force kill any lingering Node processes
+            pkill -f "vitest" || true
+            pkill -f "node" || true
+            exit 1
+          fi
+          
+          # Get the test exit code if available
+          if [ -f test_exit_code.txt ]; then
+            test_exit_code=$(cat test_exit_code.txt)
+            rm test_exit_code.txt
+            
+            if [ "$test_exit_code" -ne 0 ]; then
+              echo "Tests failed with exit code $test_exit_code"
+              exit $test_exit_code
+            fi
+          fi
+          
+          echo "Tests completed successfully!"
+      
+      # Add a debugging step that always runs
+      - name: Debug - Check for hanging processes
+        if: always()
+        run: |
+          echo "Current Node processes:"
+          ps aux | grep node || true
+             
 # Test coverage job commented out until coverage reporting setup is ready
 # Uncomment and configure when ready to set up coverage
       # - name: Upload test coverage
