@@ -1,5 +1,3 @@
-// Add these lines to your existing setup.ts file
-
 import '@testing-library/jest-dom';
 import { afterEach, afterAll, expect, vi } from 'vitest';
 
@@ -49,13 +47,10 @@ Object.assign(globalThis, {
 
 // Add a final cleanup function that runs after all tests
 afterAll(() => {
+  // Clear any timers that might be hanging
   vi.clearAllTimers();
   vi.useRealTimers();
 
-  // Force exit after a short delay
-  if (typeof process !== 'undefined') {
-    setTimeout(() => {
-      process.exit(0);
-    }, 1000);
-  }
-});
+  // We don't use process.exit here as it would break when running tests locally
+  // The CI will use the exit-handler.js script to handle forced exit
+}, 5000);
