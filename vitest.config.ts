@@ -11,8 +11,7 @@ export default defineConfig({
       threads: { singleThread: false },
     },
     teardownTimeout: 10000,
-    testTimeout: 15000,
-    
+    testTimeout: 15000
   },
   resolve: {
     alias: {
