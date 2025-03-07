@@ -6,6 +6,7 @@ import { PlayerInfo } from './ui/components/PlayerInfo';
 import { TestTransitions } from './ui/components/TestTransitions';
 import { TransitionController } from './ui/components/TransitionController';
 import { PlayerProvider } from './ui/context/PlayerContext';
+import { useAutoSave } from './ui/hooks/useAutoSave';
 import './App.css';
 import './styles/transitions.css';
 
@@ -15,6 +16,9 @@ export const App: FC = (): JSX.Element => {
   const handleIncrement = useCallback((): void => {
     setCount(prevCount => prevCount + 1);
   }, []);
+
+  // Enable auto-save functionality
+  useAutoSave();
 
   return (
     <PlayerProvider>
