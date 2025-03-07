@@ -15,7 +15,7 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
     "test": "vitest",
-    "test:ui": "vitest --ui --no-threads --pool=forks --timeout=10000",
+    "test:ui": "vitest --ui",
     "test:ci": "NODE_ENV=test vitest run --no-watch --silent=false"
   },
   "dependencies": {

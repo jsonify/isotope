@@ -37,7 +37,7 @@
 - [x] Implement the AN tracking calculations
 - [x] Implement the AW tracking calculations
 - [x] Implement the GL unlocking system
-- [ ] Create period-based progress calculations
+- [x] Create period-based progress calculations
 - [ ] Implement save/load functionality
 - [ ] Write unit tests for progression logic
 - [ ] Write integration tests for player advancement
