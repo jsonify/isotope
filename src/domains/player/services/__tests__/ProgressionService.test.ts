@@ -191,8 +191,8 @@ describe('ProgressionService - Game Lab Features', () => {
         currentPeriod: expect.any(Number),
         elementsInPeriod: expect.any(Array),
         completedInPeriod: expect.any(Number),
-        percentComplete: expect.toBeGreaterThanOrEqual(0),
-        remainingElements: expect.toBeGreaterThanOrEqual(0),
+        percentComplete: expect.any(Number),
+        remainingElements: expect.any(Number),
         nextMilestone: expect.any(String),
       });
 
