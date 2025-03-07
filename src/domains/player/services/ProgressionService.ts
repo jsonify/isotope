@@ -52,6 +52,9 @@ interface PeriodProgressData {
   currentPeriod: number;
   elementsInPeriod: ElementSymbol[];
   completedInPeriod: number;
+  percentComplete: number;
+  remainingElements: number;
+  nextMilestone?: ElementSymbol;
 }
 
 interface CacheEntry {
@@ -113,19 +116,33 @@ export class ProgressionService {
     const period = currentElement.period;
 
     // Get elements in current period
-    const elementsInPeriod = ELEMENTS_DATA.filter(element => element.period === period).map(
-      element => element.symbol
-    );
+    const periodElements = ELEMENTS_DATA.filter(element => element.period === period);
+    const elementsInPeriod = periodElements.map(element => element.symbol);
 
     // Count completed elements in this period
-    const completedInPeriod = ELEMENTS_DATA.filter(
+    const completedElements = periodElements.filter(
       element => element.period === period && element.atomicNumber <= profile.level.atomicNumber
-    ).length;
+    );
+    const completedInPeriod = completedElements.length;
+
+    // Calculate percent complete (rounded to nearest integer)
+    const percentComplete = Math.round((completedInPeriod / elementsInPeriod.length) * 100);
+
+    // Calculate remaining elements
+    const remainingElements = elementsInPeriod.length - completedInPeriod;
+
+    // Find next milestone (next uncompleted element in period)
+    const nextMilestone = periodElements.find(
+      element => element.period === period && element.atomicNumber > profile.level.atomicNumber
+    )?.symbol;
 
     const progress: PeriodProgressData = {
       currentPeriod: period,
       elementsInPeriod,
       completedInPeriod,
+      percentComplete,
+      remainingElements,
+      nextMilestone,
     };
 
     // Store in cache

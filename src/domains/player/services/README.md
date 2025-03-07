@@ -22,6 +22,30 @@ Period progress calculations are cached to optimize performance:
 - Cache key format: `period_progress_{playerId}_{currentElement}`
 - Cache is automatically cleared on period advancement
 
+### Period Progress Calculation
+
+The service tracks detailed period progress through the `PeriodProgressData` interface:
+
+```typescript
+interface PeriodProgressData {
+  currentPeriod: number; // Current period number
+  elementsInPeriod: string[]; // Symbols of all elements in the period
+  completedInPeriod: number; // Number of completed elements
+  percentComplete: number; // Percentage completion (0-100)
+  remainingElements: number; // Number of elements left to complete
+  nextMilestone?: string; // Next element to unlock (if any)
+}
+```
+
+Progress calculations include:
+
+- Period-specific element tracking
+- Completion percentage
+- Remaining elements counter
+- Next milestone identification
+
+The calculations are cached for 5 seconds to optimize performance.
+
 ### Event System
 
 The GL system emits events for important state changes:
