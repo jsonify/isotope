@@ -119,9 +119,11 @@ export class PlayerProfileService {
       }
 
       const persistedProfile = profileToSave;
-      const serializedProfile = JSON.stringify(persistedProfile, (key, value) => {
-        if (value instanceof Date) {
-          return value.toISOString();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const serializedProfile = JSON.stringify(persistedProfile, (_key, value) => {
+        // Use underscore prefix for unused parameter to avoid linting issues
+        if (_key === '' || value instanceof Date) {
+          return value instanceof Date ? value.toISOString() : value;
         }
         return value;
       });
