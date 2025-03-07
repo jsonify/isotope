@@ -41,49 +41,52 @@ export class PlayerProfileService {
    * Loads the persisted profile from localStorage
    */
   private loadPersistedProfile(): PersistedPlayerProfile {
-    const storedProfile = localStorage.getItem(this.storageKey);
+    let storedData = null;
 
-    // Check if localStorage is available
-    if (!this.isLocalStorageAvailable()) {
+    try {
+      if (this.isLocalStorageAvailable()) {
+        storedData = localStorage.getItem(this.storageKey);
+      }
+    } catch {
       console.error('localStorage is not available');
       return this.createNewPersistedProfile();
     }
 
-    // Return new profile if no stored profile exists
-    if (!storedProfile) return this.createNewPersistedProfile();
-
-    if (storedProfile !== null) {
-      try {
-        const parsedProfile = JSON.parse(storedProfile);
-        const validationResult = this.validationService.validatePersistedProfile(parsedProfile);
-
-        if (!validationResult.isValid || !validationResult.profile) {
-          console.error('Profile validation failed:', validationResult.errors);
-          return this.createNewPersistedProfile();
-        }
-
-        // Convert date strings back to Date objects
-        const convertedProfile = {
-          ...validationResult.profile,
-          lastLogin: this.parseDate(parsedProfile.lastLogin),
-          createdAt: this.parseDate(parsedProfile.createdAt),
-          updatedAt: this.parseDate(parsedProfile.updatedAt),
-          achievements: parsedProfile.achievements.map((achievement: Achievement) => ({
-            ...achievement,
-            dateUnlocked: this.parseDate(achievement.dateUnlocked),
-          })),
-        };
-
-        convertedProfile.validation.lastValidated = new Date();
-
-        return convertedProfile;
-      } catch (error) {
-        console.error('Error parsing stored profile:', error);
-        return this.createNewPersistedProfile();
-      }
+    if (!storedData) {
+      return this.createNewPersistedProfile();
     }
 
-    return this.createNewPersistedProfile();
+    try {
+      const parsedData = JSON.parse(storedData);
+      const now = new Date();
+
+      // Reconstruct profile with proper date objects
+      const profile: PersistedPlayerProfile = {
+        ...parsedData,
+        lastLogin: new Date(parsedData.lastLogin),
+        createdAt: new Date(parsedData.createdAt),
+        updatedAt: new Date(parsedData.updatedAt),
+        achievements: (parsedData.achievements || []).map((a: Achievement) => ({
+          ...a,
+          dateUnlocked: new Date(a.dateUnlocked),
+        })),
+        validation: {
+          lastValidated: now,
+        },
+        schemaVersion: CURRENT_PROFILE_VERSION,
+      };
+
+      const validationResult = this.validationService.validatePersistedProfile(profile);
+      if (!validationResult.isValid || !validationResult.profile) {
+        console.error('Profile validation failed:', validationResult.errors);
+        return this.createNewPersistedProfile();
+      }
+
+      return profile;
+    } catch (error) {
+      console.error('Error parsing stored profile:', error);
+      return this.createNewPersistedProfile();
+    }
   }
 
   /**
@@ -92,36 +95,37 @@ export class PlayerProfileService {
    */
   public saveProfile(profile: PlayerProfile): boolean {
     try {
-      // Check if localStorage is available
       if (!this.isLocalStorageAvailable()) {
         console.error('localStorage is not available');
         return false;
       }
 
-      // Check storage quota before saving
-      if (!this.hasStorageQuota(profile)) {
-        console.error('Insufficient storage quota');
-        return false;
-      }
-
-      // Create persisted profile with validation metadata
-      const persistedProfile = {
-        ...profile,
+      const now = new Date();
+      const profileToSave = {
+        ...(profile || {}), // Apply null-safe spread
         schemaVersion: CURRENT_PROFILE_VERSION,
-        updatedAt: this.parseDate(),
+        updatedAt: now,
         validation: {
-          lastValidated: new Date(),
+          lastValidated: now,
         },
       };
 
-      // Validate before saving
-      const validationResult = this.validationService.validatePersistedProfile(persistedProfile);
+      const validationResult = this.validationService.validatePlayerProfile(
+        profileToSave as PersistedPlayerProfile
+      );
       if (!validationResult.isValid) {
         console.error('Profile validation failed:', validationResult.errors);
         return false;
       }
 
-      const serializedProfile = JSON.stringify(persistedProfile);
+      const persistedProfile = profileToSave;
+      const serializedProfile = JSON.stringify(persistedProfile, (key, value) => {
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        return value;
+      });
+
       localStorage.setItem(this.storageKey, serializedProfile);
 
       return true;
@@ -177,7 +181,7 @@ export class PlayerProfileService {
    * Create a new persisted player profile
    */
   private createNewPersistedProfile(displayName: string = 'New Scientist'): PersistedPlayerProfile {
-    const now = this.parseDate();
+    const now = new Date();
     const persistedProfile: PersistedPlayerProfile = {
       ...INITIAL_PLAYER_PROFILE,
       id: uuidv4(),
@@ -190,7 +194,6 @@ export class PlayerProfileService {
         lastValidated: now,
       },
     };
-
     this.saveProfile(persistedProfile);
     return persistedProfile;
   }
@@ -199,8 +202,13 @@ export class PlayerProfileService {
    * Extract PlayerProfile from PersistedPlayerProfile
    */
   private extractPlayerProfile(persistedProfile: PersistedPlayerProfile): PlayerProfile {
-    // Omit persistence metadata
-    const { ...playerProfile } = persistedProfile;
+    // Explicitly omit persistence metadata
+    const {
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      schemaVersion,
+      validation /* eslint-enable @typescript-eslint/no-unused-vars */,
+      ...playerProfile
+    } = persistedProfile;
 
     return playerProfile;
   }
@@ -212,7 +220,7 @@ export class PlayerProfileService {
     const currentProfile = this.getProfile();
     const updatedProfile = {
       ...currentProfile,
-      ...updates,
+      ...(updates || {}),
       updatedAt: this.parseDate(),
     };
 
@@ -363,11 +371,14 @@ export class PlayerProfileService {
     if (value === undefined) {
       return new Date();
     }
-
-    if (value instanceof Date) {
-      return new Date(value.getTime());
+    try {
+      if (value instanceof Date) {
+        return new Date(value.getTime());
+      }
+      return new Date(value);
+    } catch (error) {
+      console.error('Error parsing date:', error);
+      return new Date();
     }
-
-    return new Date(value);
   }
 }
