@@ -150,27 +150,6 @@ export class PlayerProfileService {
   }
 
   /**
-   * Check if we have enough storage quota for the profile
-   */
-  private hasStorageQuota(profile: PlayerProfile): boolean {
-    try {
-      const serializedProfile = JSON.stringify({
-        ...profile,
-        schemaVersion: CURRENT_PROFILE_VERSION,
-        validation: { lastValidated: new Date() },
-      });
-
-      // Test if we can store this size
-      const testKey = '__quota_test__';
-      localStorage.setItem(testKey, serializedProfile);
-      localStorage.removeItem(testKey);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
    * Create a new player profile
    */
   private createNewProfile(displayName: string = 'New Scientist'): PlayerProfile {
