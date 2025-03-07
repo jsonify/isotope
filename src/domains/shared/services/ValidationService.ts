@@ -107,6 +107,7 @@ export class ValidationService {
       [!this.isValidElementSymbol(profile.currentElement), 'Invalid current element'],
       [!this.isValidGameModeArray(profile.unlockedGames), 'Invalid unlocked games array'],
       [!this.isValidAchievementArray(profile.achievements), 'Invalid achievements array'],
+      [typeof profile.electrons !== 'number', 'Invalid electrons value'],
     ];
 
     validations.forEach(([isInvalid, message]) => {
