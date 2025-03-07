@@ -52,9 +52,9 @@ interface PeriodProgressData {
   currentPeriod: number;
   elementsInPeriod: ElementSymbol[];
   completedInPeriod: number;
-  percentComplete: number;
-  remainingElements: number;
-  nextMilestone?: ElementSymbol;
+  percentComplete: number; // Percentage of elements completed in the period
+  remainingElements: number; // Number of elements remaining to complete in the period
+  nextMilestone?: ElementSymbol; // The next element to unlock in the period
 }
 
 interface CacheEntry {
