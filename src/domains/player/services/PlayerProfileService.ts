@@ -4,11 +4,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { INITIAL_PLAYER_PROFILE } from '../../shared/constants/game-constants';
 import type {
   PlayerProfile,
+  PersistedPlayerProfile,
   PlayerLevel,
   ElementSymbol,
   Achievement,
   GameMode,
 } from '../../shared/models/domain-models';
+import { CURRENT_PROFILE_VERSION } from '../../shared/models/domain-models';
 import type {
   ElementUnlockTransition,
   AchievementUnlockTransition,
@@ -16,54 +18,89 @@ import type {
 } from '../../shared/models/transition-models';
 import { TransitionType } from '../../shared/models/transition-models';
 import { TransitionService } from '../../shared/services/TransitionService';
+import { ValidationService } from '../../shared/services/ValidationService';
 
 export class PlayerProfileService {
   private storageKey = 'isotope_player_profile';
+  private validationService: ValidationService;
+
+  public constructor() {
+    this.validationService = ValidationService.getInstance();
+  }
 
   /**
    * Get the current player profile from localStorage or create a new one
+   * @throws Error if profile validation fails
    */
   public getProfile(): PlayerProfile {
+    const persistedProfile = this.loadPersistedProfile();
+    return this.extractPlayerProfile(persistedProfile);
+  }
+
+  /**
+   * Loads the persisted profile from localStorage
+   */
+  private loadPersistedProfile(): PersistedPlayerProfile {
     const storedProfile = localStorage.getItem(this.storageKey);
 
     if (storedProfile !== null) {
       try {
-        const parsedProfile = JSON.parse(storedProfile) as PlayerProfile;
+        const parsedProfile = JSON.parse(storedProfile);
+        const validationResult = this.validationService.validatePersistedProfile(parsedProfile);
+
+        if (!validationResult.isValid || !validationResult.profile) {
+          console.error('Profile validation failed:', validationResult.errors);
+          return this.createNewPersistedProfile();
+        }
 
         // Convert date strings back to Date objects
         const convertedProfile = {
-          ...parsedProfile,
+          ...validationResult.profile,
           lastLogin: this.parseDate(parsedProfile.lastLogin),
           createdAt: this.parseDate(parsedProfile.createdAt),
           updatedAt: this.parseDate(parsedProfile.updatedAt),
-          achievements: parsedProfile.achievements.map(achievement => ({
+          achievements: parsedProfile.achievements.map((achievement: Achievement) => ({
             ...achievement,
             dateUnlocked: this.parseDate(achievement.dateUnlocked),
           })),
         };
 
+        convertedProfile.validation.lastValidated = new Date();
+
         return convertedProfile;
       } catch (error) {
         console.error('Error parsing stored profile:', error);
-        return this.createNewProfile();
+        return this.createNewPersistedProfile();
       }
     }
 
-    return this.createNewProfile();
+    return this.createNewPersistedProfile();
   }
 
   /**
    * Save the player profile to localStorage
+   * @throws Error if profile validation fails
    */
   public saveProfile(profile: PlayerProfile): boolean {
     try {
-      // Update the lastLogin and updatedAt dates
-      const updatedProfile = {
+      // Create persisted profile with validation metadata
+      const persistedProfile: PersistedPlayerProfile = {
         ...profile,
+        schemaVersion: CURRENT_PROFILE_VERSION,
         updatedAt: this.parseDate(),
+        validation: {
+          lastValidated: new Date(),
+        },
       };
 
-      localStorage.setItem(this.storageKey, JSON.stringify(updatedProfile));
+      // Validate before saving
+      const validationResult = this.validationService.validatePersistedProfile(persistedProfile);
+      if (!validationResult.isValid) {
+        console.error('Profile validation failed:', validationResult.errors);
+        return false;
+      }
+
+      localStorage.setItem(this.storageKey, JSON.stringify(persistedProfile));
       return true;
     } catch (error) {
       console.error('Failed to save player profile:', error);
@@ -75,31 +112,57 @@ export class PlayerProfileService {
    * Create a new player profile
    */
   private createNewProfile(displayName: string = 'New Scientist'): PlayerProfile {
+    return this.extractPlayerProfile(this.createNewPersistedProfile(displayName));
+  }
+
+  /**
+   * Create a new persisted player profile
+   */
+  private createNewPersistedProfile(displayName: string = 'New Scientist'): PersistedPlayerProfile {
     const now = this.parseDate();
-    const newProfile: PlayerProfile = {
+    const persistedProfile: PersistedPlayerProfile = {
       ...INITIAL_PLAYER_PROFILE,
       id: uuidv4(),
       displayName,
       lastLogin: now,
       createdAt: now,
       updatedAt: now,
+      schemaVersion: CURRENT_PROFILE_VERSION,
+      validation: {
+        lastValidated: now,
+      },
     };
 
-    this.saveProfile(newProfile);
-    return newProfile;
+    this.saveProfile(persistedProfile);
+    return persistedProfile;
+  }
+
+  /**
+   * Extract PlayerProfile from PersistedPlayerProfile
+   */
+  private extractPlayerProfile(persistedProfile: PersistedPlayerProfile): PlayerProfile {
+    // Omit persistence metadata
+    const { ...playerProfile } = persistedProfile;
+
+    return playerProfile;
   }
 
   /**
    * Update specific fields in the player profile
    */
   public updateProfile(updates: Partial<PlayerProfile>): PlayerProfile {
+    const currentProfile = this.getProfile();
     const updatedProfile = {
-      ...this.getProfile(),
+      ...currentProfile,
       ...updates,
       updatedAt: this.parseDate(),
     };
 
-    this.saveProfile(updatedProfile);
+    if (!this.saveProfile(updatedProfile)) {
+      console.error('Failed to save profile updates, returning current profile');
+      return currentProfile;
+    }
+
     return updatedProfile;
   }
 
