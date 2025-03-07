@@ -43,6 +43,15 @@ export class PlayerProfileService {
   private loadPersistedProfile(): PersistedPlayerProfile {
     const storedProfile = localStorage.getItem(this.storageKey);
 
+    // Check if localStorage is available
+    if (!this.isLocalStorageAvailable()) {
+      console.error('localStorage is not available');
+      return this.createNewPersistedProfile();
+    }
+
+    // Return new profile if no stored profile exists
+    if (!storedProfile) return this.createNewPersistedProfile();
+
     if (storedProfile !== null) {
       try {
         const parsedProfile = JSON.parse(storedProfile);
@@ -83,8 +92,20 @@ export class PlayerProfileService {
    */
   public saveProfile(profile: PlayerProfile): boolean {
     try {
+      // Check if localStorage is available
+      if (!this.isLocalStorageAvailable()) {
+        console.error('localStorage is not available');
+        return false;
+      }
+
+      // Check storage quota before saving
+      if (!this.hasStorageQuota(profile)) {
+        console.error('Insufficient storage quota');
+        return false;
+      }
+
       // Create persisted profile with validation metadata
-      const persistedProfile: PersistedPlayerProfile = {
+      const persistedProfile = {
         ...profile,
         schemaVersion: CURRENT_PROFILE_VERSION,
         updatedAt: this.parseDate(),
@@ -100,10 +121,47 @@ export class PlayerProfileService {
         return false;
       }
 
-      localStorage.setItem(this.storageKey, JSON.stringify(persistedProfile));
+      const serializedProfile = JSON.stringify(persistedProfile);
+      localStorage.setItem(this.storageKey, serializedProfile);
+
       return true;
     } catch (error) {
       console.error('Failed to save player profile:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if localStorage is available
+   */
+  private isLocalStorageAvailable(): boolean {
+    try {
+      const test = '__storage_test__';
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check if we have enough storage quota for the profile
+   */
+  private hasStorageQuota(profile: PlayerProfile): boolean {
+    try {
+      const serializedProfile = JSON.stringify({
+        ...profile,
+        schemaVersion: CURRENT_PROFILE_VERSION,
+        validation: { lastValidated: new Date() },
+      });
+
+      // Test if we can store this size
+      const testKey = '__quota_test__';
+      localStorage.setItem(testKey, serializedProfile);
+      localStorage.removeItem(testKey);
+      return true;
+    } catch {
       return false;
     }
   }
