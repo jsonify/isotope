@@ -34,7 +34,6 @@ class StorageOperationsTests {
       setupTest();
 
       try {
-        this.service['storageKey'] = this.TEST_STORAGE_KEY;
         localStorage.removeItem(this.TEST_STORAGE_KEY);
         const profile = this.service.resetProfile();
 
