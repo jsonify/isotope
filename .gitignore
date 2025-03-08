@@ -22,7 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-handoffs/0-system/chat-history
+
+# Ignore raw conversation exports
+handoffs/0-system/chat-history/*
+# But keep the README
+!handoffs/0-system/chat-history/README.md
 
 # Testing
 coverage
