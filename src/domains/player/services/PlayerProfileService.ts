@@ -1,4 +1,3 @@
-// src/domains/player/services/PlayerProfileService.ts
 import { v4 as uuidv4 } from 'uuid';
 
 import { INITIAL_PLAYER_PROFILE } from '../../shared/constants/game-constants';
@@ -57,32 +56,7 @@ export class PlayerProfileService {
     }
 
     try {
-      const parsedData = JSON.parse(storedData);
-      const now = new Date();
-
-      // Reconstruct profile with proper date objects
-      const profile: PersistedPlayerProfile = {
-        ...parsedData,
-        lastLogin: new Date(parsedData.lastLogin),
-        createdAt: new Date(parsedData.createdAt),
-        updatedAt: new Date(parsedData.updatedAt),
-        achievements: (parsedData.achievements || []).map((a: Achievement) => ({
-          ...a,
-          dateUnlocked: new Date(a.dateUnlocked),
-        })),
-        validation: {
-          lastValidated: now,
-        },
-        schemaVersion: CURRENT_PROFILE_VERSION,
-      };
-
-      const validationResult = this.validationService.validatePersistedProfile(profile);
-      if (!validationResult.isValid || !validationResult.profile) {
-        console.error('Profile validation failed:', validationResult.errors);
-        return this.createNewPersistedProfile();
-      }
-
-      return profile;
+      return this.deserializeProfile(storedData);
     } catch (error) {
       console.error('Error parsing stored profile:', error);
       return this.createNewPersistedProfile();
@@ -96,7 +70,6 @@ export class PlayerProfileService {
   public saveProfile(profile: PlayerProfile): boolean {
     try {
       if (!this.isLocalStorageAvailable()) {
-        console.error('localStorage is not available');
         return false;
       }
 
@@ -110,23 +83,8 @@ export class PlayerProfileService {
         },
       };
 
-      const validationResult = this.validationService.validatePlayerProfile(
-        profileToSave as PersistedPlayerProfile
-      );
-      if (!validationResult.isValid) {
-        console.error('Profile validation failed:', validationResult.errors);
-        return false;
-      }
-
       const persistedProfile = profileToSave;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const serializedProfile = JSON.stringify(persistedProfile, (_key, value) => {
-        // Use underscore prefix for unused parameter to avoid linting issues
-        if (_key === '' || value instanceof Date) {
-          return value instanceof Date ? value.toISOString() : value;
-        }
-        return value;
-      });
+      const serializedProfile = this.serializeProfile(persistedProfile);
 
       localStorage.setItem(this.storageKey, serializedProfile);
 
@@ -135,6 +93,81 @@ export class PlayerProfileService {
       console.error('Failed to save player profile:', error);
       return false;
     }
+  }
+
+  /**
+   * Serialize a player profile to a JSON string
+   * Handles Date objects and includes schema version
+   */
+  public serializeProfile(profile: PlayerProfile | PersistedPlayerProfile): string {
+    const now = new Date();
+    const profileToSerialize =
+      'schemaVersion' in profile
+        ? profile
+        : {
+            ...profile,
+            schemaVersion: CURRENT_PROFILE_VERSION,
+            validation: {
+              lastValidated: now,
+            },
+          };
+
+    const validationResult = this.validationService.validatePlayerProfile(
+      profileToSerialize as PersistedPlayerProfile
+    );
+    if (!validationResult.isValid) {
+      throw new Error(`Profile validation failed: ${validationResult.errors.join(', ')}`);
+    }
+
+    return JSON.stringify(profileToSerialize, (_key, value) => {
+      return value instanceof Date ? value.toISOString() : value;
+    });
+  }
+
+  /**
+   * Deserialize a JSON string to a player profile
+   * Handles Date objects and validates schema version
+   */
+  public deserializeProfile(serializedProfile: string): PersistedPlayerProfile {
+    const parsedData = JSON.parse(serializedProfile);
+    const now = new Date();
+
+    // Reconstruct profile with proper date objects
+    const profile: PersistedPlayerProfile = {
+      ...parsedData,
+      lastLogin: new Date(parsedData.lastLogin),
+      createdAt: new Date(parsedData.createdAt),
+      updatedAt: new Date(parsedData.updatedAt),
+      achievements: (parsedData.achievements || []).map((a: Achievement) => ({
+        ...a,
+        dateUnlocked: new Date(a.dateUnlocked),
+      })),
+      validation: {
+        lastValidated: now,
+      },
+      schemaVersion: parsedData.schemaVersion || CURRENT_PROFILE_VERSION,
+    };
+
+    // Handle version migrations if needed
+    if (profile.schemaVersion < CURRENT_PROFILE_VERSION) {
+      console.warn(
+        `Migrating profile from version ${profile.schemaVersion} to ${CURRENT_PROFILE_VERSION}`
+      );
+      // Basic migration: create a new profile with current version
+      return this.createNewPersistedProfile();
+      // Future: Implement actual data migration logic to preserve data
+      // For now, just ensuring it doesn't crash and returns a valid profile
+      profile.schemaVersion = CURRENT_PROFILE_VERSION;
+    }
+
+    // Validate profile after migration or if no migration was needed
+    const validationResult = this.validationService.validatePersistedProfile(profile);
+    if (!validationResult.isValid || !validationResult.profile) {
+      console.error('Profile validation failed:', validationResult.errors);
+      throw new Error(`Profile validation failed: ${validationResult.errors.join(', ')}`);
+    }
+
+    return profile;
   }
 
   /**
