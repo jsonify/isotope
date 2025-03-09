@@ -76,9 +76,9 @@
 
 ##### Unit Tests 1
 
-- [ ] Write unit tests for progression logic
-- [ ] Write integration tests for player advancement
-- [ ] 📝 Create micro-handoff
+- [x] Write unit tests for progression logic
+- [x] Write integration tests for player advancement
+- [x] 📝 Create micro-handoff
 
 ### Economy System (Basic Implementation)
 
