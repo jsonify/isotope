@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { calculatePuzzleReward, awardElectrons } from '../../economy/services/ElectronService';
-import type { PlayerProfile } from '../../player/models/PlayerProfile';
 import { ProgressionService } from '../../player/services/ProgressionService';
 import { ELEMENTS_DATA } from '../../shared/constants/game-constants';
 import { GameMode, ElectronSource } from '../../shared/models/domain-models';
+import type { PlayerProfile } from '../../shared/models/domain-models';
 import type {
   Puzzle,
   ElementSymbol,

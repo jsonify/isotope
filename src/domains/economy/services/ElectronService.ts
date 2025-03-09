@@ -69,16 +69,11 @@ export function initializePlayerBalance(playerId: string, initialBalance = 0): v
 
 /**
  * Calculate electron reward for completing a puzzle
- * @param profile - Player profile
  * @param isPerfect - Whether it was a perfect solve
  * @param difficulty - Puzzle difficulty level
  * @returns RewardResult - Electron reward details
  */
-export function calculatePuzzleReward(
-  profile: PlayerProfile,
-  isPerfect: boolean,
-  difficulty: number
-): RewardResult {
+export function calculatePuzzleReward(isPerfect: boolean, difficulty: number): RewardResult {
   // Basic placeholder implementation - refine later
   const baseReward = 10;
   const difficultyFactor = difficulty * 0.5;
