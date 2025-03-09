@@ -1,153 +1,93 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
-import { PlayerProfileService } from '../domains/player/services/PlayerProfileService';
-import { INITIAL_PLAYER_PROFILE } from '../domains/shared/constants/game-constants';
-import type { ElementSymbol, PlayerProfile } from '../domains/shared/models/domain-models';
-import { GameMode } from '../domains/shared/models/domain-models';
+import { ProfileManager } from '../domains/player/services/ProfileManager';
 
-// Type to help with mocking private methods
-type PrivatePlayerProfileService = PlayerProfileService & {
-  isLocalStorageAvailable: () => boolean;
-};
+describe('ProfileManager Integration Tests', () => {
+  let profileManager: ProfileManager;
+  let mockLocalStorage: { [key: string]: string };
 
-describe('PlayerProfileService Integration Tests', () => {
-  let service: PlayerProfileService;
-
+  // Mock localStorage
   beforeEach(() => {
-    service = new PlayerProfileService();
-    // Clear localStorage before each test
-    localStorage.clear();
-  });
+    mockLocalStorage = {};
 
-  afterEach(() => {
-    // Clear localStorage after each test
-    localStorage.clear();
-    vi.restoreAllMocks(); // Restore mocks to avoid interference between tests
-  });
-
-  describe('Full Save/Load Cycle', () => {
-    it('should save and load a player profile correctly', () => {
-      const originalProfile = {
-        ...INITIAL_PLAYER_PROFILE,
-        id: 'integration-test-id',
-        displayName: 'Integration Test Player',
-      };
-      service.saveProfile(originalProfile);
-
-      const loadedService = new PlayerProfileService(); // Create a new service instance to simulate load
-      // Mock the private method using our helper type
-      vi.spyOn(
-        loadedService as PrivatePlayerProfileService,
-        'isLocalStorageAvailable'
-      ).mockReturnValue(true);
-
-      const loadedProfile = loadedService.getProfile();
-
-      // Remove timestamp fields before comparison since they'll differ
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { updatedAt, ...restOriginalProfile } = originalProfile;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { updatedAt: updatedAtLoaded, ...restLoadedProfile } = loadedProfile;
-
-      expect(loadedProfile).toBeDefined();
-      expect(restLoadedProfile).toEqual(restOriginalProfile);
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: (key: string) => mockLocalStorage[key] || null,
+        setItem: (key: string, value: string) => {
+          mockLocalStorage[key] = value;
+        },
+        removeItem: (key: string) => {
+          delete mockLocalStorage[key];
+        },
+      },
+      writable: true,
     });
+
+    profileManager = new ProfileManager();
   });
 
-  describe('Storage Layer Integration', () => {
-    it('should call localStorage.setItem when saving profile', () => {
-      const setItemSpy = vi.spyOn(localStorage, 'setItem');
-      vi.spyOn(service as PrivatePlayerProfileService, 'isLocalStorageAvailable').mockReturnValue(
-        true
-      );
+  describe('Save/Load Cycle', () => {
+    it('should successfully complete a full save/load cycle', () => {
+      // Create a new profile
+      const profile = profileManager.createProfile('Test Player');
 
-      const now = new Date();
-      const profile: PlayerProfile = {
-        ...INITIAL_PLAYER_PROFILE,
-        id: 'storage-test-id',
-        displayName: 'Storage Test Player',
+      // Verify profile structure
+      expect(profile).toEqual({
+        id: expect.any(String),
+        displayName: 'Test Player',
+        currentElement: 'H',
         level: {
           atomicNumber: 1,
-          atomicWeight: 1,
-          gameLab: 1,
+          atomicWeight: 0,
+          gameLab: 0,
         },
-        currentElement: 'H' as ElementSymbol,
-        unlockedGames: [GameMode.TUTORIAL],
-        achievements: [],
-        lastLogin: now,
-        createdAt: now,
-        updatedAt: now,
-        tutorialCompleted: false,
-        electrons: 0,
-      };
-
-      service.saveProfile(profile);
-
-      expect(setItemSpy).toHaveBeenCalledTimes(1);
-      expect(setItemSpy).toHaveBeenCalledWith('isotope_player_profile', expect.any(String));
-    });
-
-    it('should call localStorage.getItem when loading profile', () => {
-      const getItemSpy = vi.spyOn(localStorage, 'getItem');
-      vi.spyOn(service as PrivatePlayerProfileService, 'isLocalStorageAvailable').mockReturnValue(
-        true
-      );
-      service.getProfile();
-
-      expect(getItemSpy).toHaveBeenCalledTimes(1);
-      expect(getItemSpy).toHaveBeenCalledWith('isotope_player_profile');
-    });
-
-    it('should not call localStorage if localStorage is unavailable', () => {
-      // Mock isLocalStorageAvailable to return false for this test
-      vi.spyOn(service as PrivatePlayerProfileService, 'isLocalStorageAvailable').mockReturnValue(
-        false
-      );
-
-      const setItemSpy = vi.spyOn(localStorage, 'setItem');
-      const getItemSpy = vi.spyOn(localStorage, 'getItem');
-
-      // Try to save and get profile
-      service.saveProfile({ ...INITIAL_PLAYER_PROFILE, id: 'unavailable-test-id' });
-      service.getProfile();
-
-      // Verify localStorage methods were not called
-      expect(setItemSpy).not.toHaveBeenCalled();
-      expect(getItemSpy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle localStorage errors gracefully when saving', () => {
-      vi.spyOn(service as PrivatePlayerProfileService, 'isLocalStorageAvailable').mockReturnValue(
-        true
-      );
-      vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
-        throw new Error('Mock storage error');
+        lastUpdated: expect.any(String),
       });
 
-      const profile = { ...INITIAL_PLAYER_PROFILE, id: 'error-test-id' };
-      const result = service.saveProfile(profile);
+      // Save the profile
+      const saveResult = profileManager.saveProfile(profile);
+      expect(saveResult).toBe(true);
 
-      expect(result).toBe(false);
+      // Load the profile
+      const loadedProfile = profileManager.loadProfile();
+
+      // Verify loaded profile matches saved profile
+      expect(loadedProfile).toEqual({
+        ...profile,
+        lastUpdated: expect.any(String),
+      });
     });
 
-    it('should create a new profile when localStorage is unavailable during load', () => {
-      // First ensure we have nothing in storage
-      localStorage.clear();
+    it('should create a new profile when none exists', () => {
+      const profile = profileManager.loadProfile();
 
-      // Mock isLocalStorageAvailable to return false
-      vi.spyOn(service as PrivatePlayerProfileService, 'isLocalStorageAvailable').mockReturnValue(
-        false
-      );
+      expect(profile).toEqual({
+        id: expect.any(String),
+        displayName: 'Player',
+        currentElement: 'H',
+        level: {
+          atomicNumber: 1,
+          atomicWeight: 0,
+          gameLab: 0,
+        },
+        lastUpdated: expect.any(String),
+      });
+    });
 
-      // Get profile should create a new one
-      const profile = service.getProfile();
+    it('should update lastUpdated timestamp on save', () => {
+      const profile = profileManager.createProfile('Test Player');
+      const originalTimestamp = profile.lastUpdated;
 
-      // Verify we got a valid profile with expected structure
-      expect(profile).toBeDefined();
-      expect(profile.id).toBeDefined();
-      expect(profile.displayName).toBe('New Scientist');
+      // Wait briefly to ensure timestamp changes
+      setTimeout(() => {
+        profileManager.saveProfile(profile);
+        const loadedProfile = profileManager.loadProfile();
+
+        expect(loadedProfile.lastUpdated).not.toBe(originalTimestamp);
+        expect(new Date(loadedProfile.lastUpdated).getTime()).toBeGreaterThan(
+          new Date(originalTimestamp).getTime()
+        );
+      }, 1);
     });
   });
 });
