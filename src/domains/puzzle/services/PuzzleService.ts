@@ -59,7 +59,7 @@ export class PuzzleService {
     const timeTaken = this.calculateTimeTaken(puzzle.timeLimit, timeRemaining);
 
     const result = this.createPuzzleResult(puzzle, profile, score, timeTaken, isPerfect);
-    const reward = calculatePuzzleReward(profile, isPerfect, puzzle.difficulty);
+    const reward = calculatePuzzleReward(isPerfect, puzzle.difficulty);
     const updatedProfile = this.applyRewards(profile, reward, puzzle, isPerfect);
 
     return { result, reward, updatedProfile };
