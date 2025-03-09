@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import type { ElectronService } from '../../economy/services/ElectronService';
+import { calculatePuzzleReward, awardElectrons } from '../../economy/services/ElectronService';
 import { ProgressionService } from '../../player/services/ProgressionService';
 import { ELEMENTS_DATA } from '../../shared/constants/game-constants';
 import { GameMode, ElectronSource } from '../../shared/models/domain-models';
+import type { PlayerProfile } from '../../shared/models/domain-models';
 import type {
   Puzzle,
   ElementSymbol,
-  PlayerProfile,
   Element,
   PuzzleResult,
   RewardResult,
@@ -20,11 +20,10 @@ type CompletionResult = {
 };
 
 export class PuzzleService {
-  private readonly electronService: ElectronService;
+  // Remove duplicate declaration
   private readonly progressionService: ProgressionService;
 
-  public constructor(electronService: ElectronService) {
-    this.electronService = electronService;
+  public constructor() {
     this.progressionService = new ProgressionService();
   }
 
@@ -60,11 +59,7 @@ export class PuzzleService {
     const timeTaken = this.calculateTimeTaken(puzzle.timeLimit, timeRemaining);
 
     const result = this.createPuzzleResult(puzzle, profile, score, timeTaken, isPerfect);
-    const reward = this.electronService.calculatePuzzleReward(
-      profile,
-      isPerfect,
-      puzzle.difficulty
-    );
+    const reward = calculatePuzzleReward(isPerfect, puzzle.difficulty);
     const updatedProfile = this.applyRewards(profile, reward, puzzle, isPerfect);
 
     return { result, reward, updatedProfile };
@@ -101,7 +96,8 @@ export class PuzzleService {
     const electronSource = isPerfect
       ? ElectronSource.PERFECT_SOLVE
       : ElectronSource.PUZZLE_COMPLETION;
-    const { profile: finalProfile } = this.electronService.awardElectrons(
+    // Assuming awardElectrons is meant to be called directly
+    const { profile: finalProfile } = awardElectrons(
       profileWithAtomicWeight,
       reward.electrons,
       electronSource,
