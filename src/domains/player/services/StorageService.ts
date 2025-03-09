@@ -34,19 +34,4 @@ export class StorageService {
       return null;
     }
   }
-
-  /**
-   * Check if local storage is available
-   * @returns boolean indicating if localStorage is available
-   */
-  private isStorageAvailable(): boolean {
-    try {
-      const testKey = '__storage_test__';
-      localStorage.setItem(testKey, testKey);
-      localStorage.removeItem(testKey);
-      return true;
-    } catch {
-      return false;
-    }
-  }
 }
