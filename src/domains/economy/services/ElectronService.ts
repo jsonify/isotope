@@ -1,3 +1,12 @@
+import type { PlayerProfile } from '../../shared/models/domain-models';
+import type { ElectronSource, RewardResult } from '../../shared/models/domain-models';
+
+interface RewardDetails {
+  electronsAwarded: number;
+  source: ElectronSource;
+  description: string;
+}
+
 /**
  * In-memory storage for player electron balances
  * @private
@@ -56,4 +65,56 @@ export function removeElectrons(playerId: string, amount: number): boolean {
  */
 export function initializePlayerBalance(playerId: string, initialBalance = 0): void {
   electronBalances.set(playerId, Math.max(0, initialBalance));
+}
+
+/**
+ * Calculate electron reward for completing a puzzle
+ * @param profile - Player profile
+ * @param isPerfect - Whether it was a perfect solve
+ * @param difficulty - Puzzle difficulty level
+ * @returns RewardResult - Electron reward details
+ */
+export function calculatePuzzleReward(
+  profile: PlayerProfile,
+  isPerfect: boolean,
+  difficulty: number
+): RewardResult {
+  // Basic placeholder implementation - refine later
+  const baseReward = 10;
+  const difficultyFactor = difficulty * 0.5;
+  const perfectSolveBonus = isPerfect ? 5 : 0;
+  const totalReward = baseReward + difficultyFactor + perfectSolveBonus;
+
+  return {
+    electrons: Math.round(totalReward),
+    progressGain: { atomicWeight: 0 }, // No atomic weight reward for now
+  };
+}
+
+/**
+ * Award electrons to player profile
+ * @param profile - Player profile to award electrons to
+ * @param electrons - Number of electrons to award
+ * @param source - Source of electrons (e.g., puzzle completion)
+ * @param description - Description of reward
+ * @returns Updated PlayerProfile and reward details
+ */
+export function awardElectrons(
+  profile: PlayerProfile,
+  electrons: number,
+  source: ElectronSource,
+  description: string
+): { profile: PlayerProfile; rewardDetails?: RewardDetails } {
+  if (electrons > 0) {
+    addElectrons(profile.id, electrons);
+  }
+
+  return {
+    profile,
+    rewardDetails: {
+      electronsAwarded: electrons,
+      source,
+      description,
+    },
+  };
 }
