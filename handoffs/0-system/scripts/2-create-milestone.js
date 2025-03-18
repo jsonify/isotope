@@ -7,9 +7,9 @@
  *   node create-milestone.js [milestone-name]
  */
 
-const fs = require('fs');
-const path = require('path');
-const readline = require('readline');
+import fs from 'fs';
+import path from 'path';
+import readline from 'readline';
 
 // Create readline interface for user input
 const rl = readline.createInterface({
