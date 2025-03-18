@@ -9,7 +9,7 @@ import type { ElectronSource, RewardResult } from '../../shared/models/domain-mo
 
 interface ElectronTransaction {
   timestamp: Date;
-  type: 'add' | 'remove' | 'initialize';
+  type: 'add' | 'remove' | 'initialize' | 'earn';
   amount: number;
   previousBalance: number;
   newBalance: number;
@@ -200,6 +200,32 @@ export function calculatePuzzleReward(
  * @param description - Description of reward
  * @returns Updated PlayerProfile and reward details
  */
+/**
+ * Record electrons earned by a player
+ * @param playerId - The unique identifier of the player
+ * @param amount - The amount of electrons earned (must be positive)
+ * @returns true if successful, false if amount is invalid
+ */
+export function earn(playerId: string, amount: number): boolean {
+  if (amount <= 0) {
+    return false;
+  }
+
+  const previousBalance = getElectronBalance(playerId);
+  const newBalance = previousBalance + amount;
+  electronBalances.set(playerId, newBalance);
+
+  recordTransaction(playerId, {
+    timestamp: new Date(),
+    type: 'earn',
+    amount,
+    previousBalance,
+    newBalance,
+  });
+
+  return true;
+}
+
 export function awardElectrons(
   profile: PlayerProfile,
   electrons: number,
