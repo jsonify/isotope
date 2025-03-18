@@ -7,6 +7,14 @@ import {
 import type { PlayerProfile } from '../../shared/models/domain-models';
 import type { ElectronSource, RewardResult } from '../../shared/models/domain-models';
 
+interface ElectronTransaction {
+  timestamp: Date;
+  type: 'add' | 'remove' | 'initialize';
+  amount: number;
+  previousBalance: number;
+  newBalance: number;
+}
+
 interface RewardDetails {
   electronsAwarded: number;
   source: ElectronSource;
@@ -18,6 +26,62 @@ interface RewardDetails {
  * @private
  */
 const electronBalances = new Map<string, number>();
+
+/**
+ * In-memory storage for player electron transaction histories
+ * @private
+ */
+const transactionHistory = new Map<string, ElectronTransaction[]>();
+
+/**
+ * Clear all transaction histories (for testing purposes)
+ * @private
+ */
+export function clearTransactionHistory(): void {
+  transactionHistory.clear();
+}
+
+/**
+ * Clear all electron balances (for testing purposes)
+ * @private
+ */
+/**
+ * Clear all electron balances (for testing purposes)
+ * @private
+ */
+function clearElectronBalances(): void {
+  electronBalances.clear();
+}
+
+/**
+ * Clear both electron balances and transaction history (for testing purposes)
+ * @private - but exported for test file usage
+ */
+export function clearAllElectronServiceData(): void {
+  clearElectronBalances();
+  clearTransactionHistory();
+}
+
+/**
+ * Record a new electron transaction for a player
+ * @private
+ * @param playerId - The unique identifier of the player
+ * @param transaction - The transaction details to record
+ */
+function recordTransaction(playerId: string, transaction: ElectronTransaction): void {
+  const history = transactionHistory.get(playerId) ?? [];
+  history.push(transaction);
+  transactionHistory.set(playerId, history);
+}
+
+/**
+ * Get the transaction history for a player
+ * @param playerId - The unique identifier of the player
+ * @returns Array of electron transactions, or empty array if no history exists
+ */
+export function getElectronTransactionHistory(playerId: string): ElectronTransaction[] {
+  return transactionHistory.get(playerId) ?? [];
+}
 
 /**
  * Get the current electron balance for a player
@@ -39,8 +103,18 @@ export function addElectrons(playerId: string, amount: number): boolean {
     return false;
   }
 
-  const currentBalance = getElectronBalance(playerId);
-  electronBalances.set(playerId, currentBalance + amount);
+  const previousBalance = getElectronBalance(playerId);
+  const newBalance = previousBalance + amount;
+  electronBalances.set(playerId, newBalance);
+
+  recordTransaction(playerId, {
+    timestamp: new Date(),
+    type: 'add',
+    amount,
+    previousBalance,
+    newBalance,
+  });
+
   return true;
 }
 
@@ -51,16 +125,30 @@ export function addElectrons(playerId: string, amount: number): boolean {
  * @returns true if successful, false if amount is invalid or insufficient balance
  */
 export function removeElectrons(playerId: string, amount: number): boolean {
+  const previousBalance = getElectronBalance(playerId);
   if (amount <= 0) {
     return false;
   }
 
-  const currentBalance = getElectronBalance(playerId);
-  if (currentBalance < amount) {
+  if (previousBalance < amount) {
     return false;
   }
 
-  electronBalances.set(playerId, currentBalance - amount);
+  const newBalance = previousBalance - amount;
+  electronBalances.set(playerId, newBalance);
+
+  const transaction = {
+    // Inlined recordTransaction code
+    timestamp: new Date(),
+    type: 'remove' as ElectronTransaction['type'], // Explicitly cast to ElectronTransaction['type']
+    amount,
+    previousBalance,
+    newBalance,
+  };
+  const history = transactionHistory.get(playerId) ?? [];
+  history.push(transaction);
+  transactionHistory.set(playerId, history);
+
   return true;
 }
 
@@ -70,7 +158,17 @@ export function removeElectrons(playerId: string, amount: number): boolean {
  * @param initialBalance - Optional initial balance (defaults to 0)
  */
 export function initializePlayerBalance(playerId: string, initialBalance = 0): void {
-  electronBalances.set(playerId, Math.max(0, initialBalance));
+  const previousBalance = getElectronBalance(playerId);
+  const newBalance = Math.max(0, initialBalance);
+  electronBalances.set(playerId, newBalance);
+
+  recordTransaction(playerId, {
+    timestamp: new Date(),
+    type: 'initialize',
+    amount: initialBalance,
+    previousBalance,
+    newBalance,
+  });
 }
 
 /**
