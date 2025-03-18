@@ -233,7 +233,7 @@ export function awardElectrons(
   description: string
 ): { profile: PlayerProfile; rewardDetails?: RewardDetails } {
   if (electrons > 0) {
-    addElectrons(profile.id, electrons);
+    earn(profile.id, electrons);
   }
 
   return {
