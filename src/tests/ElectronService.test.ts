@@ -14,6 +14,7 @@ import {
   initializePlayerBalance,
   calculatePuzzleReward,
   getElectronTransactionHistory,
+  earn,
 } from '../domains/economy/services/ElectronService';
 
 describe('ElectronService', () => {
@@ -245,6 +246,45 @@ describe('ElectronService', () => {
 
       expect(getElectronBalance(TEST_PLAYER_ID)).toBe(150);
       expect(getElectronBalance(OTHER_PLAYER_ID)).toBe(30);
+    });
+  });
+
+  describe('earn', () => {
+    beforeEach(() => {
+      clearAllElectronServiceData();
+      initializePlayerBalance(TEST_PLAYER_ID, 0);
+    });
+
+    it('should add earned electrons to balance', () => {
+      const result = earn(TEST_PLAYER_ID, 50);
+      expect(result).toBe(true);
+      expect(getElectronBalance(TEST_PLAYER_ID)).toBe(50);
+    });
+
+    it('should record earn transaction in history', () => {
+      earn(TEST_PLAYER_ID, 30);
+      const history = getElectronTransactionHistory(TEST_PLAYER_ID);
+
+      expect(history).toHaveLength(2); // initialize + earn
+      expect(history[1]).toEqual({
+        type: 'earn',
+        amount: 30,
+        previousBalance: 0,
+        newBalance: 30,
+        timestamp: expect.any(Date),
+      });
+    });
+
+    it('should reject negative earn amounts', () => {
+      const result = earn(TEST_PLAYER_ID, -10);
+      expect(result).toBe(false);
+      expect(getElectronBalance(TEST_PLAYER_ID)).toBe(0);
+    });
+
+    it('should accumulate multiple earned amounts', () => {
+      earn(TEST_PLAYER_ID, 30);
+      earn(TEST_PLAYER_ID, 20);
+      expect(getElectronBalance(TEST_PLAYER_ID)).toBe(50);
     });
   });
 });

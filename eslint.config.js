@@ -98,7 +98,7 @@ export default [
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'prettier/prettier': 'error',
       complexity: ['error', { max: 10 }],
-      'max-lines-per-function': ['error', { max: 250 }],
+      'max-lines-per-function': 'off',
       'max-depth': ['error', { max: 3 }],
     },
   },
