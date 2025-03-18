@@ -1,10 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import {
+  DIFFICULTY_MULTIPLIERS,
+  PERFECT_SOLVE_MULTIPLIER,
+  BASE_REWARD,
+} from '../domains/economy/services/economy-constants';
+import type { DifficultyLevel } from '../domains/economy/services/economy-constants';
+import {
   getElectronBalance,
   addElectrons,
   removeElectrons,
   initializePlayerBalance,
+  calculatePuzzleReward,
 } from '../domains/economy/services/ElectronService';
 
 describe('ElectronService', () => {
@@ -69,6 +76,39 @@ describe('ElectronService', () => {
     it('should handle exact balance removal', () => {
       expect(removeElectrons(TEST_PLAYER_ID, 100)).toBe(true);
       expect(getElectronBalance(TEST_PLAYER_ID)).toBe(0);
+    });
+  });
+
+  describe('calculatePuzzleReward', () => {
+    it('should calculate base reward for easy non-perfect solve', () => {
+      const result = calculatePuzzleReward(false, 'EASY');
+      expect(result.electrons).toBe(BASE_REWARD * DIFFICULTY_MULTIPLIERS.EASY);
+    });
+
+    it('should apply perfect solve multiplier', () => {
+      const result = calculatePuzzleReward(true, 'EASY');
+      expect(result.electrons).toBe(
+        Math.round(BASE_REWARD * DIFFICULTY_MULTIPLIERS.EASY * PERFECT_SOLVE_MULTIPLIER)
+      );
+    });
+
+    it('should scale rewards by difficulty', () => {
+      const difficulties: DifficultyLevel[] = ['EASY', 'MEDIUM', 'HARD'];
+      const results = difficulties.map(diff => calculatePuzzleReward(false, diff));
+
+      difficulties.forEach((diff, index) => {
+        expect(results[index].electrons).toBe(
+          Math.round(BASE_REWARD * DIFFICULTY_MULTIPLIERS[diff])
+        );
+      });
+    });
+
+    it('should apply both difficulty and perfect multipliers', () => {
+      const result = calculatePuzzleReward(true, 'HARD');
+      const expected = Math.round(
+        BASE_REWARD * DIFFICULTY_MULTIPLIERS.HARD * PERFECT_SOLVE_MULTIPLIER
+      );
+      expect(result.electrons).toBe(expected);
     });
   });
 

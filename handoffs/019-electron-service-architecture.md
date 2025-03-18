@@ -30,6 +30,7 @@ Chose a functional module approach over a class-based service for several reason
    function addElectrons(playerId: string, amount: number): boolean;
    function removeElectrons(playerId: string, amount: number): boolean;
    function initializePlayerBalance(playerId: string, initialBalance?: number): void;
+   function calculatePuzzleReward(isPerfect: boolean, difficulty: DifficultyLevel): RewardResult;
    ```
 
 ### Key Features
@@ -39,17 +40,46 @@ Chose a functional module approach over a class-based service for several reason
    - Full TypeScript implementation
    - Strict parameter typing
    - Clear return types
+   - Enum-like constant types for difficulty levels
 
 2. **Error Handling**
 
    - Validation for negative amounts
    - Balance sufficiency checks
    - Safe default values
+   - Fallback difficulty multipliers
 
 3. **Data Isolation**
    - Separate balances per player
    - Private module-level storage
    - No shared state between players
+
+### Reward Calculation System
+
+1. **Configuration Constants**
+
+   ```typescript
+   const BASE_REWARD = 10;
+   const DIFFICULTY_MULTIPLIERS = {
+     EASY: 1,
+     MEDIUM: 1.5,
+     HARD: 2,
+   };
+   const PERFECT_SOLVE_MULTIPLIER = 1.2;
+   ```
+
+2. **Reward Formula**
+
+   ```typescript
+   totalReward =
+     BASE_REWARD * DIFFICULTY_MULTIPLIERS[difficulty] * (isPerfect ? PERFECT_SOLVE_MULTIPLIER : 1);
+   ```
+
+3. **Key Design Decisions**
+   - Simple multiplier-based system for easy scaling
+   - Configurable constants for easy tuning
+   - Clear separation of base rewards and modifiers
+   - Type-safe difficulty levels
 
 ## Testing Implementation
 
@@ -59,6 +89,8 @@ Created comprehensive test suite covering:
 - Edge cases and error conditions
 - Player balance isolation
 - Multiple operation sequences
+- Reward calculations for all difficulty levels
+- Perfect/non-perfect solve combinations
 
 ### Test Categories
 
@@ -80,8 +112,15 @@ Created comprehensive test suite covering:
    - Invalid operations
 
 4. **Player Isolation**
+
    - Multiple player interactions
    - Balance independence
+
+5. **Reward Calculation Tests**
+   - Base reward verification
+   - Difficulty scaling
+   - Perfect solve multipliers
+   - Combined multiplier effects
 
 ## Technical Decisions
 
@@ -96,11 +135,19 @@ Created comprehensive test suite covering:
    - Boolean returns for operation success/failure
    - Optional parameters with safe defaults
    - Consistent parameter ordering
+   - Type-safe difficulty levels
 
 3. **Error Handling**
+
    - Silent failures with boolean returns
    - No exceptions for business logic
    - Clear validation rules
+
+4. **Reward System**
+   - Multiplier-based for simplicity and flexibility
+   - Configurable constants for easy balancing
+   - Type-safe difficulty levels
+   - Clear separation of concerns
 
 ## Next Steps
 
@@ -109,11 +156,14 @@ Created comprehensive test suite covering:
    - Add persistence layer
    - Implement transaction history
    - Add event notifications
+   - Add time-based bonuses
+   - Implement combo rewards
 
 2. **Integration**
    - Connect with PlayerProfile
    - Add to game reward system
    - Implement UI components
+   - Add visual feedback for rewards
 
 ## Acceptance Criteria Met
 
@@ -123,4 +173,6 @@ Created comprehensive test suite covering:
 ✅ Added TypeScript types and validation
 ✅ Implemented error handling
 ✅ Created comprehensive tests
+✅ Implemented basic earning calculations
+✅ Created reward algorithms
 ✅ Created micro-handoff document

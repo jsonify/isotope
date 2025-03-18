@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
+import type { DifficultyLevel } from '../../economy/services/economy-constants';
 import { calculatePuzzleReward, awardElectrons } from '../../economy/services/ElectronService';
 import { ProgressionService } from '../../player/services/ProgressionService';
 import { ELEMENTS_DATA } from '../../shared/constants/game-constants';
@@ -25,6 +26,12 @@ export class PuzzleService {
 
   public constructor() {
     this.progressionService = new ProgressionService();
+  }
+
+  private mapDifficultyToLevel(difficulty: number): DifficultyLevel {
+    if (difficulty <= 3) return 'EASY';
+    if (difficulty <= 7) return 'MEDIUM';
+    return 'HARD';
   }
 
   public generatePuzzle(gameMode: GameMode, difficulty: number, elements: ElementSymbol[]): Puzzle {
@@ -59,7 +66,8 @@ export class PuzzleService {
     const timeTaken = this.calculateTimeTaken(puzzle.timeLimit, timeRemaining);
 
     const result = this.createPuzzleResult(puzzle, profile, score, timeTaken, isPerfect);
-    const reward = calculatePuzzleReward(isPerfect, puzzle.difficulty);
+    const difficultyLevel = this.mapDifficultyToLevel(puzzle.difficulty);
+    const reward = calculatePuzzleReward(isPerfect, difficultyLevel);
     const updatedProfile = this.applyRewards(profile, reward, puzzle, isPerfect);
 
     return { result, reward, updatedProfile };
