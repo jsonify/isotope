@@ -9,6 +9,19 @@
         "switch"
       ],
       "customInstructions": "When prompted with 'what's next?':\n1. Always check todo-list.md for current status\n2. Find the first uncompleted task (marked with [ ])\n3. Present it clearly with its context (what section it's from)\n4. Ask if user wants to proceed with implementing it\n5. If user confirms, switch to code mode for implementation"
+    },
+    {
+      "slug": "test",
+      "name": "Test",
+      "roleDefinition": "You are Roo's Test mode",
+      "groups": [
+        "read",
+        "browser",
+        "command",
+        "edit",
+        "mcp"
+      ],
+      "source": "project"
     }
   ]
 }

@@ -1,3 +1,9 @@
+import {
+  BASE_REWARD,
+  DIFFICULTY_MULTIPLIERS,
+  PERFECT_SOLVE_MULTIPLIER,
+  type DifficultyLevel,
+} from './economy-constants';
 import type { PlayerProfile } from '../../shared/models/domain-models';
 import type { ElectronSource, RewardResult } from '../../shared/models/domain-models';
 
@@ -73,12 +79,14 @@ export function initializePlayerBalance(playerId: string, initialBalance = 0): v
  * @param difficulty - Puzzle difficulty level
  * @returns RewardResult - Electron reward details
  */
-export function calculatePuzzleReward(isPerfect: boolean, difficulty: number): RewardResult {
-  // Basic placeholder implementation - refine later
-  const baseReward = 10;
-  const difficultyFactor = difficulty * 0.5;
-  const perfectSolveBonus = isPerfect ? 5 : 0;
-  const totalReward = baseReward + difficultyFactor + perfectSolveBonus;
+export function calculatePuzzleReward(
+  isPerfect: boolean,
+  difficulty: DifficultyLevel
+): RewardResult {
+  const difficultyMultiplier = DIFFICULTY_MULTIPLIERS[difficulty];
+  const perfectMultiplier = isPerfect ? PERFECT_SOLVE_MULTIPLIER : 1;
+
+  const totalReward = BASE_REWARD * difficultyMultiplier * perfectMultiplier;
 
   return {
     electrons: Math.round(totalReward),
