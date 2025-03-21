@@ -3,11 +3,17 @@ import { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import type { PlayerProfile } from './domains/player/models/PlayerProfile';
 import { ProfileManager } from './domains/player/services/ProfileManager';
+import { PlayerInfo } from './ui/components/PlayerInfo';
+import { TutorialHint } from './ui/components/TutorialHint';
+import { PlayerProvider } from './ui/context/PlayerContext';
+import tutorialSteps from './ui/tutorial/tutorialSteps';
+import useTutorial from './ui/tutorial/useTutorial';
 
 const profileManager = new ProfileManager();
 
 function App(): JSX.Element {
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const { currentStep, nextStep, isTutorialActive } = useTutorial(tutorialSteps);
 
   // Load profile on app start
   useEffect((): void => {
@@ -51,21 +57,25 @@ function App(): JSX.Element {
   }, [profile]);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Isotope</h1>
-        {profile && (
-          <div>
-            <p>Player: {profile.displayName}</p>
-            <p>Current Element: {profile.currentElement}</p>
-            <p>Atomic Weight: {profile.level.atomicWeight}</p>
-            <button type="button" onClick={handleUpdateProfile}>
-              Increase Atomic Weight
-            </button>
-          </div>
-        )}
-      </header>
-    </div>
+    <PlayerProvider>
+      <div className="App">
+        <header className="App-header">
+          <h1>Isotope</h1>
+          <PlayerInfo>
+            {isTutorialActive && currentStep && (
+              <TutorialHint currentStep={currentStep} nextStep={nextStep} />
+            )}
+          </PlayerInfo>
+          {profile && (
+            <div>
+              <button type="button" onClick={handleUpdateProfile}>
+                Increase Atomic Weight
+              </button>
+            </div>
+          )}
+        </header>
+      </div>
+    </PlayerProvider>
   );
 }
 

@@ -19,6 +19,7 @@
     "test:ci": "NODE_ENV=test vitest run --no-watch --silent=false"
   },
   "dependencies": {
+    "@testing-library/react-hooks": "^8.0.1",
     "@types/uuid": "^10.0.0",
     "eslint-plugin-react": "^7.37.4",
     "react": "^18.2.0",

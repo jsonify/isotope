@@ -1,10 +1,14 @@
 // src/ui/components/PlayerInfo.tsx
 import type { FC } from 'react';
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 
 import { usePlayer } from '../hooks/usePlayer';
 
-export const PlayerInfo: FC = (): JSX.Element => {
+interface PlayerInfoProps {
+  children?: React.ReactNode;
+}
+
+export const PlayerInfo: FC<PlayerInfoProps> = ({ children }): JSX.Element => {
   const { profile, updateProfile, resetProfile, isLoading } = usePlayer();
 
   const handleAddElectrons = useCallback((): void => {
@@ -33,15 +37,21 @@ export const PlayerInfo: FC = (): JSX.Element => {
           <strong>Electrons:</strong> {profile.electrons}
         </div>
         <div>
-          <strong>Atomic Number:</strong> {profile.level.atomicNumber}
+          <strong>Atomic Number:</strong>{' '}
+          <span id="player-info-an">{profile.level.atomicNumber}</span>
         </div>
         <div>
-          <strong>Atomic Weight:</strong> {profile.level.atomicWeight}
+          <strong>Atomic Weight:</strong>{' '}
+          <span id="player-info-aw">{profile.level.atomicWeight}</span>
+        </div>
+        <div>
+          <strong>Game Lab:</strong> <span id="player-info-gl">{profile.level.gameLab}</span>
         </div>
         <div>
           <strong>Tutorial Completed:</strong> {profile.tutorialCompleted ? 'Yes' : 'No'}
         </div>
       </div>
+      {children} {/* Render children here */}
       <div className="flex space-x-4">
         <button onClick={handleAddElectrons} className="btn-primary">
           Add 5 Electrons
