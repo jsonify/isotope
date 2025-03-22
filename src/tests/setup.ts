@@ -3,31 +3,45 @@ import { afterEach, afterAll, expect, vi } from 'vitest';
 
 // Set up browser globals for test environment
 if (typeof window === 'undefined') {
-  global.window = {} as unknown as Window & typeof globalThis;
+  global.window = {
+    ...global.window, // Preserve existing window properties if any
+    matchMedia: vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+    localStorage: {
+      // Mock localStorage
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    },
+  } as unknown as Window & typeof globalThis;
+
   global.document = {
+    ...global.document, // Preserve existing document properties if any
     createElement: vi.fn(),
     querySelector: vi.fn(),
+    body: {
+      classList: {
+        add: vi.fn(),
+        remove: vi.fn(),
+      },
+    },
   } as unknown as Document;
-  global.navigator = {} as Navigator;
+  global.navigator = {
+    ...global.navigator, // Preserve existing navigator properties
+  } as Navigator;
 }
 
 // Ensure window has all required properties
 Object.assign(global.window, { document: global.document, navigator: global.navigator });
-
-// Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
 
 // Set up Vitest globals
 Object.assign(globalThis, { expect, vi });

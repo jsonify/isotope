@@ -32,3 +32,6 @@ handoffs/0-system/chat-history/*
 coverage
 build-output
 build-output.zip
+
+# Misc
+ui-prototype/
