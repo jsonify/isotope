@@ -1,6 +1,6 @@
 /***********************************************
  * FILE: src/ui/components/GameModeSelection.tsx
- * CREATED: 2025-03-22 12:41:19
+ * CREATED: 2025-03-22 12:41:20
  *
  * PURPOSE:
  * Component that displays and handles the selection of different game modes.

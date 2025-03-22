@@ -1,6 +1,6 @@
 /***********************************************
  * FILE: src/ui/components/__tests__/GameModeSelection.test.tsx
- * CREATED: 2025-03-22 06:57:01
+ * CREATED: 2025-03-22 06:57:02
  *
  * PURPOSE:
  * Test suite for the GameModeSelection component which handles
