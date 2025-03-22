@@ -1,3 +1,18 @@
+/***********************************************
+ * FILE: src/ui/components/PeriodicTable.tsx
+ * CREATED: 2025-03-21 23:41:32
+ *
+ * PURPOSE:
+ * This file implements a mini periodic table component for displaying
+ * progression elements in a grid layout. It handles element states,
+ * connections between elements, tooltips, and click interactions.
+ *
+ * METHODS:
+ * - MiniPeriodicTable(): Main component that renders the periodic table grid
+ * - ElementCell(): Internal component that renders individual element cells
+ * - getElementStyles(): Helper function for element styling based on state
+ ************************************************/
+
 'use client';
 
 import { useCallback } from 'react';
