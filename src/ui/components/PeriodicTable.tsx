@@ -3,21 +3,11 @@
 import { useCallback } from 'react';
 
 import { Gem, Lock } from 'lucide-react';
-import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 
-export type ProgressionElement = {
-  id: string;
-  symbol: string;
-  name: string;
-  row: number;
-  column: number;
-  state: 'completed' | 'current' | 'locked' | 'upcoming';
-  gemCost?: number;
-  path?: string;
-  category?: string;
-};
+import { ElementTooltip } from './ElementTooltip';
+import type { ProgressionElement } from './types';
 
 interface MiniPeriodicTableProps {
   elements: ProgressionElement[];
@@ -65,52 +55,73 @@ const ElementCell = ({
 
   const commonContent = (
     <>
-      <div className="text-xs">
+      <div className="text-xs" aria-hidden="true">
         {rowIndex + 1}.{colIndex + 1}
       </div>
       <div className="text-xl font-bold">{element.symbol}</div>
       <div className="text-[10px] truncate max-w-full px-1">{element.name}</div>
       {element.state === 'locked' && element.gemCost && (
         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#2D2E3A] rounded-full px-2 py-0.5 border border-gray-700">
-          <Gem className="h-3 w-3 text-[#2D9CDB]" />
+          <Gem className="h-3 w-3 text-[#2D9CDB]" aria-hidden="true" />
           <span className="text-xs font-medium">{element.gemCost}</span>
         </div>
       )}
-      {element.state === 'locked' && <Lock className="absolute top-1 right-1 h-3 w-3" />}
+      {element.state === 'locked' && (
+        <Lock className="absolute top-1 right-1 h-3 w-3" aria-hidden="true" />
+      )}
+      {element.progress !== undefined && element.state === 'current' && (
+        <div
+          className="absolute bottom-0 left-0 h-1 bg-blue-400 rounded-b-lg transition-all"
+          style={{ width: `${element.progress}%` }}
+          role="progressbar"
+          aria-valuenow={element.progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        />
+      )}
     </>
   );
 
+  const elementContent = element.path ? (
+    <a
+      href={element.path}
+      className={cn(
+        'w-16 h-16 rounded-lg flex flex-col items-center justify-center transition-all hover:scale-105 relative overflow-hidden',
+        elementStyles
+      )}
+      aria-label={`${element.name} (${element.state})`}
+    >
+      {commonContent}
+    </a>
+  ) : (
+    <button
+      onClick={handleClick}
+      className={cn(
+        'w-16 h-16 rounded-lg flex flex-col items-center justify-center transition-all hover:scale-105 relative overflow-hidden',
+        elementStyles
+      )}
+      disabled={element.state === 'locked' || element.state === 'upcoming'}
+      aria-label={`${element.name} (${element.state})`}
+    >
+      {commonContent}
+    </button>
+  );
+
   return (
-    <div className="relative">
+    <div className="relative" role="gridcell">
       {hasLeftConnection && (
-        <div className="absolute top-1/2 left-0 w-2 h-0.5 -translate-x-2 bg-[#2D2E3A]" />
+        <div
+          className="absolute top-1/2 left-0 w-2 h-0.5 -translate-x-2 bg-[#2D2E3A]"
+          aria-hidden="true"
+        />
       )}
       {hasTopConnection && (
-        <div className="absolute top-0 left-1/2 h-2 w-0.5 -translate-y-2 -translate-x-1/2 bg-[#2D2E3A]" />
+        <div
+          className="absolute top-0 left-1/2 h-2 w-0.5 -translate-y-2 -translate-x-1/2 bg-[#2D2E3A]"
+          aria-hidden="true"
+        />
       )}
-
-      {element.path ? (
-        <Link
-          href={element.path}
-          className={cn(
-            'w-16 h-16 rounded-lg flex flex-col items-center justify-center transition-all hover:scale-105',
-            elementStyles
-          )}
-        >
-          {commonContent}
-        </Link>
-      ) : (
-        <button
-          onClick={handleClick}
-          className={cn(
-            'w-16 h-16 rounded-lg flex flex-col items-center justify-center transition-all hover:scale-105',
-            elementStyles
-          )}
-          disabled={element.state === 'locked' || element.state === 'upcoming'}
-        >
-          {commonContent}
-        </button>
-      )}
+      <ElementTooltip element={element}>{elementContent}</ElementTooltip>
     </div>
   );
 };
@@ -144,6 +155,7 @@ export function MiniPeriodicTable({
             gridTemplateColumns: `repeat(${maxColumn + 1}, minmax(0, 1fr))`,
           }}
           role="grid"
+          aria-label="Periodic Table Progress"
         >
           {grid.map((row, rowIndex) =>
             row.map((element, colIndex) =>
@@ -158,28 +170,34 @@ export function MiniPeriodicTable({
                   onElementClick={onElementClick}
                 />
               ) : (
-                <div key={`${rowIndex}-${colIndex}`} />
+                <div key={`${rowIndex}-${colIndex}`} role="gridcell" />
               )
             )
           )}
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="mt-4 flex flex-wrap gap-3" role="legend">
         <div className="flex items-center">
-          <div className="w-4 h-4 rounded-sm bg-[#2D9CDB] mr-2"></div>
+          <div className="w-4 h-4 rounded-sm bg-[#2D9CDB] mr-2" aria-hidden="true" />
           <span className="text-xs">Completed</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 rounded-sm bg-[#2D9CDB] ring-1 ring-white mr-2"></div>
+          <div
+            className="w-4 h-4 rounded-sm bg-[#2D9CDB] ring-1 ring-white mr-2"
+            aria-hidden="true"
+          />
           <span className="text-xs">Current</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 rounded-sm bg-[#2D2E3A] mr-2"></div>
+          <div className="w-4 h-4 rounded-sm bg-[#2D2E3A] mr-2" aria-hidden="true" />
           <span className="text-xs">Locked</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 rounded-sm bg-[#252731] border border-dashed border-gray-600 mr-2"></div>
+          <div
+            className="w-4 h-4 rounded-sm bg-[#252731] border border-dashed border-gray-600 mr-2"
+            aria-hidden="true"
+          />
           <span className="text-xs">Upcoming</span>
         </div>
       </div>

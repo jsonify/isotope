@@ -6,13 +6,13 @@
 
 - [x] Design tutorial flow that explains progression system
   - [x] Create step sequence framework
-  - [ ] Design screens explaining AN-AW-GL progression
-  - [ ] Implement interactive elements to demonstrate earning AW
+  <!-- - [ ] Design screens explaining AN-AW-GL progression
+  - [ ] Implement interactive elements to demonstrate earning AW -->
 
 ### Essential UI Components
 
 - [x] Import prototype UI for implementation
-- [ ] Complete PeriodicTableDisplay as progression visualization
+- [x] Complete PeriodicTableDisplay as progression visualization
 - [ ] Implement ProgressBarsModal to show AN/AW/GL progress
 - [ ] Create GameModeSelection interface
 - [ ] Build simple profile display
