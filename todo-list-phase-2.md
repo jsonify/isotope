@@ -14,7 +14,7 @@
 - [x] Import prototype UI for implementation
 - [x] Complete PeriodicTableDisplay as progression visualization
 - [x] Implement ProgressBarsModal to show AN/AW/GL progress
-- [x] Create GameModeSelection interface
+- [ ] Create GameModeSelection interface
 - [ ] Build simple profile display
 
 ### Minimal Playable Loop
