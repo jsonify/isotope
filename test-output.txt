@@ -1,0 +1,75 @@
+
+> isotope@0.0.0 test /Users/jsonify/code/isotope
+> vitest "src/ui/components/__tests__/PeriodicTable.test.tsx"
+
+
+ DEV  v3.0.8 /Users/jsonify/code/isotope
+
+ ❯ src/ui/components/__tests__/PeriodicTable.test.tsx (0 test)
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  22:22:07
+   Duration  2.33s (transform 69ms, setup 237ms, collect 0ms, tests 0ms, environment 1.05s, prepare 543ms)
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  src/ui/components/PeriodicTable.tsx x1 
+        Filename pattern: src/ui/components/__tests__/PeriodicTable.test.tsx
+
+ ❯ src/ui/components/__tests__/PeriodicTable.test.tsx (0 test)
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  22:23:09
+   Duration  232ms
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  src/ui/components/PeriodicTable.tsx x2 
+        Filename pattern: src/ui/components/__tests__/PeriodicTable.test.tsx
+
+ ❯ src/ui/components/__tests__/PeriodicTable.test.tsx (0 test)
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  22:23:26
+   Duration  146ms
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  src/ui/components/PeriodicTable.tsx x3 
+        Filename pattern: src/ui/components/__tests__/PeriodicTable.test.tsx
+
+ ❯ src/ui/components/__tests__/PeriodicTable.test.tsx (0 test)
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  22:24:15
+   Duration  204ms
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  src/ui/components/PeriodicTable.tsx x4 
+        Filename pattern: src/ui/components/__tests__/PeriodicTable.test.tsx
+
+ ❯ src/ui/components/__tests__/PeriodicTable.test.tsx (7 tests | 4 failed) 236ms
+   ✓ PeriodicTable Component > should render without errors
+   ✓ PeriodicTable Component > should render basic grid structure
+   ✓ PeriodicTable Component > should display element data (symbol and name)
+   × PeriodicTable Component > should apply "upcoming" state styling 20ms
+     → expected 'text-xl font-bold' to contain 'bg-[#252731]'
+   × PeriodicTable Component > should apply "locked" state styling 18ms
+     → expected 'text-xl font-bold' to contain 'bg-[#2D2E3A]'
+   × PeriodicTable Component > should apply "current" state styling 12ms
+     → expected 'text-xl font-bold' to contain 'bg-[#2D9CDB]'
+   × PeriodicTable Component > should apply "completed" state styling 12ms
+     → expected 'text-xl font-bold' to contain 'bg-[#2D9CDB]'
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 3 passed (7)
+   Start at  22:26:18
+   Duration  1.04s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
