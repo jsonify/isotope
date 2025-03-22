@@ -15,13 +15,14 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { Gem, Lock } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 import { ElementTooltip } from './ElementTooltip';
+import { ProgressBarsModal } from './ProgressBarsModal';
 import type { ProgressionElement } from './types';
 
 interface MiniPeriodicTableProps {
@@ -146,6 +147,17 @@ export function MiniPeriodicTable({
   onElementClick,
   className,
 }: MiniPeriodicTableProps): JSX.Element {
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<ProgressionElement | null>(null);
+
+  const handleElementClick = useCallback(
+    (element: ProgressionElement) => {
+      setSelectedElement(element);
+      setIsProgressModalOpen(true);
+      onElementClick?.(element);
+    },
+    [onElementClick]
+  );
   // Find the maximum row and column to determine the grid size
   const maxRow = elements.length > 0 ? Math.max(...elements.map(el => el.row)) : 0;
   const maxColumn = elements.length > 0 ? Math.max(...elements.map(el => el.column)) : 0;
@@ -182,7 +194,7 @@ export function MiniPeriodicTable({
                   colIndex={colIndex}
                   hasLeftConnection={colIndex > 0 && Boolean(grid[rowIndex][colIndex - 1])}
                   hasTopConnection={rowIndex > 0 && Boolean(grid[rowIndex - 1][colIndex])}
-                  onElementClick={onElementClick}
+                  onElementClick={handleElementClick}
                 />
               ) : (
                 <div key={`${rowIndex}-${colIndex}`} role="gridcell" />
@@ -191,6 +203,19 @@ export function MiniPeriodicTable({
           )}
         </div>
       </div>
+
+      {/* Progress bars modal */}
+      {selectedElement && (
+        <ProgressBarsModal
+          open={isProgressModalOpen}
+          onOpenChange={setIsProgressModalOpen}
+          progressData={{
+            anProgress: selectedElement.progress || 0,
+            awProgress: selectedElement.progress || 0,
+            glProgress: selectedElement.progress || 0,
+          }}
+        />
+      )}
 
       <div className="mt-4 flex flex-wrap gap-3" role="legend">
         <div className="flex items-center">

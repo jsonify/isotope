@@ -151,6 +151,7 @@ describe('ElectronService', () => {
           previousBalance: 0,
           newBalance: 50,
           timestamp: expect.any(Date),
+          description: 'Add electrons transaction',
         });
       });
 
@@ -168,6 +169,7 @@ describe('ElectronService', () => {
           previousBalance: 100,
           newBalance: 70,
           timestamp: expect.any(Date),
+          description: 'Remove electrons transaction',
         });
       });
 
@@ -183,6 +185,7 @@ describe('ElectronService', () => {
           previousBalance: 0,
           newBalance: 50,
           timestamp: expect.any(Date),
+          description: 'Initialize balance transaction',
         });
       });
 
@@ -203,6 +206,7 @@ describe('ElectronService', () => {
           previousBalance: 0,
           newBalance: 0,
           timestamp: expect.any(Date),
+          description: 'Initialize balance transaction',
         });
         expect(history2[0]).toEqual({
           type: 'initialize',
@@ -210,6 +214,7 @@ describe('ElectronService', () => {
           previousBalance: 0,
           newBalance: 0,
           timestamp: expect.any(Date),
+          description: 'Initialize balance transaction',
         });
 
         // Check add transactions
@@ -219,6 +224,7 @@ describe('ElectronService', () => {
           previousBalance: 0,
           newBalance: 30,
           timestamp: expect.any(Date),
+          description: 'Add electrons transaction',
         });
         expect(history2[1]).toEqual({
           type: 'add',
@@ -226,6 +232,7 @@ describe('ElectronService', () => {
           previousBalance: 0,
           newBalance: 20,
           timestamp: expect.any(Date),
+          description: 'Add electrons transaction',
         });
       });
 
@@ -272,6 +279,7 @@ describe('ElectronService', () => {
         previousBalance: 0,
         newBalance: 30,
         timestamp: expect.any(Date),
+        description: 'Earn electrons transaction',
       });
     });
 
