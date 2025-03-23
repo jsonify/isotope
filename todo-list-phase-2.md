@@ -16,7 +16,7 @@
 - [x] Implement ProgressBarsModal to show AN/AW/GL progress
   - [x] Create GameModeSelection interface - [Handoff Document 031](handoffs/031-gamemode-selection-handoff.md)
 - [x] Create GameModeSelection interface
-- [ ] Build simple profile display
+- [x] Build simple profile display
 
 ### Minimal Playable Loop
 
