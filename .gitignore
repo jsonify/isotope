@@ -23,7 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 
+# Ignore raw conversation exports
+handoffs/0-system/chat-history/*
+# But keep the README
+!handoffs/0-system/chat-history/README.md
+
 # Testing
 coverage
 build-output
 build-output.zip
+
+# Misc
+ui-prototype/

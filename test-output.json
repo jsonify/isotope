@@ -1,0 +1,5 @@
+
+> isotope@0.0.0 test /Users/jsonify/code/isotope
+> vitest "src/ui/components/__tests__/PeriodicTable.test.tsx" "--json"
+
+ ELIFECYCLE  Test failed. See above for more details.

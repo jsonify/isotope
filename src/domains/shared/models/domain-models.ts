@@ -1,5 +1,30 @@
 // src/domains/shared/models/domain-models.ts
 
+/**
+ * Current version of the player profile data structure.
+ * Increment this when making breaking changes to the structure.
+ */
+export const CURRENT_PROFILE_VERSION = 1;
+
+// Validation types
+export type ValidationResult = {
+  isValid: boolean;
+  errors: string[];
+};
+
+export type Validator<T> = (data: T) => ValidationResult;
+
+/** Required field validator result type */
+export type RequiredFields<T> = {
+  [K in keyof T]: T[K] extends Date | Function
+    ? never
+    : T[K] extends Function
+      ? never
+      : undefined extends T[K]
+        ? never
+        : K;
+}[keyof T];
+
 // Element-related types
 export type ElementSymbol =
   | 'H'
@@ -61,7 +86,13 @@ export interface PlayerLevel {
   gameLab: number;
 }
 
+/**
+ * Basic player profile without persistence metadata
+ */
 export interface PlayerProfile {
+  /**
+   * Unique identifier for the player profile
+   */
   id: string;
   displayName: string;
   level: PlayerLevel;
@@ -73,6 +104,32 @@ export interface PlayerProfile {
   tutorialCompleted: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/**
+ * Extended player profile interface for persistence
+ * Adds version tracking and validation metadata
+ */
+export interface PersistedPlayerProfile extends PlayerProfile {
+  /**
+   * Schema version number for managing data structure changes
+   */
+  schemaVersion: number;
+
+  /**
+   * Validation metadata
+   */
+  validation: {
+    /**
+     * Last validation timestamp
+     */
+    lastValidated: Date;
+
+    /**
+     * Any warnings from the last validation
+     */
+    warnings?: string[];
+  };
 }
 
 export interface PlayerProgress {

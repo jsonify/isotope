@@ -1,228 +1,226 @@
-// import { v4 as uuidv4 } from 'uuid';
-// import {
-//   Puzzle,
-//   GameMode,
-//   ElementSymbol,
-//   PlayerProfile,
-//   Element,
-//   PuzzleResult,
-//   RewardResult
-// } from '../models/domain-models';
-// import { ELEMENTS_DATA } from '../constants/game-constants';
-// import { ElectronService } from '../../economy/services/ElectronService';
+import { v4 as uuidv4 } from 'uuid';
 
-// export class PuzzleService {
-//   private electronService: ElectronService;
+import type { DifficultyLevel } from '../../economy/services/economy-constants';
+import { calculatePuzzleReward, awardElectrons } from '../../economy/services/ElectronService';
+import { ProgressionService } from '../../player/services/ProgressionService';
+import { ELEMENTS_DATA } from '../../shared/constants/game-constants';
+import { GameMode, ElectronSource } from '../../shared/models/domain-models';
+import type { PlayerProfile } from '../../shared/models/domain-models';
+import type {
+  Puzzle,
+  ElementSymbol,
+  Element,
+  PuzzleResult,
+  RewardResult,
+} from '../../shared/models/domain-models';
 
-//   constructor(electronService: ElectronService) {
-//     this.electronService = electronService;
-//   }
+type CompletionResult = {
+  result: PuzzleResult;
+  reward: RewardResult;
+  updatedProfile: PlayerProfile;
+};
 
-//   /**
-//    * Generates a new puzzle based on game mode and difficulty
-//    */
-//   generatePuzzle(gameMode: GameMode, difficulty: number, elements: ElementSymbol[]): Puzzle {
-//     // Create base puzzle
-//     const puzzle: Puzzle = {
-//       id: uuidv4(),
-//       type: gameMode,
-//       difficulty,
-//       elements,
-//       instructions: this.getInstructionsForGameMode(gameMode),
-//       completed: false,
-//       perfectSolve: false,
-//       attempts: 0
-//     };
+export class PuzzleService {
+  // Remove duplicate declaration
+  private readonly progressionService: ProgressionService;
 
-//     // Add time limit for certain game modes
-//     if (
-//       gameMode === GameMode.ELEMENT_MATCH ||
-//       gameMode === GameMode.PERIODIC_SORT
-//     ) {
-//       puzzle.timeLimit = 60 + (difficulty * 10); // Base time + difficulty bonus
-//     }
+  public constructor() {
+    this.progressionService = new ProgressionService();
+  }
 
-//     return puzzle;
-//   }
+  private mapDifficultyToLevel(difficulty: number): DifficultyLevel {
+    if (difficulty <= 3) return 'EASY';
+    if (difficulty <= 7) return 'MEDIUM';
+    return 'HARD';
+  }
 
-//   /**
-//    * Records completion of a puzzle and returns rewards
-//    */
-//   completePuzzle(
-//     puzzle: Puzzle,
-//     profile: PlayerProfile,
-//     score: number,
-//     timeRemaining?: number
-//   ): { result: PuzzleResult; reward: RewardResult; updatedProfile: PlayerProfile } {
-//     // Calculate whether this was a perfect solve
-//     const isPerfect = this.isPerfectSolve(puzzle, score, timeRemaining);
+  public generatePuzzle(gameMode: GameMode, difficulty: number, elements: ElementSymbol[]): Puzzle {
+    const puzzle: Puzzle = {
+      id: uuidv4(),
+      type: gameMode,
+      difficulty,
+      elements,
+      instructions: this.getInstructionsForGameMode(gameMode),
+      completed: false,
+      perfectSolve: false,
+      attempts: 0,
+    };
 
-//     // Create the puzzle result
-//     const result: PuzzleResult = {
-//       puzzleId: puzzle.id,
-//       playerId: profile.id,
-//       score,
-//       timeTaken: puzzle.timeLimit ? (puzzle.timeLimit - (timeRemaining || 0)) : 0,
-//       dateCompleted: new Date(),
-//       isPerfect
-//     };
+    const isTimedGameMode =
+      gameMode === GameMode.ELEMENT_MATCH || gameMode === GameMode.PERIODIC_SORT;
 
-//     // Calculate rewards
-//     const reward = this.electronService.calculatePuzzleReward(
-//       profile,
-//       isPerfect,
-//       puzzle.difficulty
-//     );
+    if (isTimedGameMode) {
+      puzzle.timeLimit = 60 + difficulty * 10;
+    }
 
-//     // Update player profile
-//     const updatedProfile = {
-//       ...profile,
-//       level: {
-//         ...profile.level,
-//         atomicWeight: profile.level.atomicWeight + reward.progressGain.atomicWeight
-//       },
-//       updatedAt: new Date()
-//     };
+    return puzzle;
+  }
 
-//     // Award electrons
-//     const { profile: profileWithElectrons } = this.electronService.awardElectrons(
-//       updatedProfile,
-//       reward.electrons,
-//       isPerfect ? 'perfect' : 'puzzle',
-//       `Completed ${GameMode[puzzle.type]} puzzle`
-//     );
+  public completePuzzle(
+    puzzle: Puzzle,
+    profile: PlayerProfile,
+    score: number,
+    timeRemaining?: number
+  ): CompletionResult {
+    const isPerfect = this.isPerfectSolve(puzzle, score, timeRemaining);
+    const timeTaken = this.calculateTimeTaken(puzzle.timeLimit, timeRemaining);
 
-//     return {
-//       result,
-//       reward,
-//       updatedProfile: profileWithElectrons
-//     };
-//   }
+    const result = this.createPuzzleResult(puzzle, profile, score, timeTaken, isPerfect);
+    const difficultyLevel = this.mapDifficultyToLevel(puzzle.difficulty);
+    const reward = calculatePuzzleReward(isPerfect, difficultyLevel);
+    const updatedProfile = this.applyRewards(profile, reward, puzzle, isPerfect);
 
-//   /**
-//    * Gets puzzles suitable for a specific element
-//    */
-//   getPuzzlesForElement(element: ElementSymbol, gameMode: GameMode, count: number = 1): Puzzle[] {
-//     const elementData = this.getElementBySymbol(element);
+    return { result, reward, updatedProfile };
+  }
 
-//     // Generate puzzles based on the element and game mode
-//     const puzzles: Puzzle[] = [];
-//     const difficulty = this.calculateDifficultyForElement(elementData);
+  private createPuzzleResult(
+    puzzle: Puzzle,
+    profile: PlayerProfile,
+    score: number,
+    timeTaken: number,
+    isPerfect: boolean
+  ): PuzzleResult {
+    return {
+      puzzleId: puzzle.id,
+      playerId: profile.id,
+      score,
+      timeTaken,
+      dateCompleted: new Date(),
+      isPerfect,
+    };
+  }
 
-//     for (let i = 0; i < count; i++) {
-//       // For element match, use the current element and some other unlocked elements
-//       if (gameMode === GameMode.ELEMENT_MATCH) {
-//         // Select elements with atomic numbers close to the current element
-//         const relatedElements = this.getRelatedElements(elementData, 5);
-//         puzzles.push(this.generatePuzzle(gameMode, difficulty, [element, ...relatedElements]));
-//       }
-//       // For periodic sort, use elements from the same period
-//       else if (gameMode === GameMode.PERIODIC_SORT) {
-//         const periodElements = ELEMENTS_DATA
-//           .filter(e => e.period === elementData.period)
-//           .map(e => e.symbol);
-//         puzzles.push(this.generatePuzzle(gameMode, difficulty, periodElements));
-//       }
-//       // For electron shell puzzles, use elements with different electron configurations
-//       else if (gameMode === GameMode.ELECTRON_SHELL) {
-//         const differentShellElements = ELEMENTS_DATA
-//           .filter(e => e.period <= elementData.period)
-//           .slice(0, 6)
-//           .map(e => e.symbol);
-//         puzzles.push(this.generatePuzzle(gameMode, difficulty, differentShellElements));
-//       }
-//       // Default case - just use the current element
-//       else {
-//         puzzles.push(this.generatePuzzle(gameMode, difficulty, [element]));
-//       }
-//     }
+  private applyRewards(
+    profile: PlayerProfile,
+    reward: RewardResult,
+    puzzle: Puzzle,
+    isPerfect: boolean
+  ): PlayerProfile {
+    const profileWithAtomicWeight = this.progressionService.awardAtomicWeight(
+      profile,
+      reward.progressGain.atomicWeight
+    );
 
-//     return puzzles;
-//   }
+    const electronSource = isPerfect
+      ? ElectronSource.PERFECT_SOLVE
+      : ElectronSource.PUZZLE_COMPLETION;
+    // Assuming awardElectrons is meant to be called directly
+    const { profile: finalProfile } = awardElectrons(
+      profileWithAtomicWeight,
+      reward.electrons,
+      electronSource,
+      `Completed ${GameMode[puzzle.type]} puzzle`
+    );
 
-//   /**
-//    * Calculates difficulty based on element
-//    */
-//   private calculateDifficultyForElement(element: Element): number {
-//     // Base difficulty on atomic number
-//     const baseDifficulty = Math.max(1, Math.floor(element.atomicNumber / 2));
+    return finalProfile;
+  }
 
-//     // Cap at a reasonable maximum
-//     return Math.min(10, baseDifficulty);
-//   }
+  public getPuzzlesForElement(element: ElementSymbol, gameMode: GameMode, count = 1): Puzzle[] {
+    const elementData = this.getElementBySymbol(element);
+    const puzzles: Puzzle[] = [];
+    const difficulty = this.calculateDifficultyForElement(elementData);
 
-//   /**
-//    * Determines if a solve was perfect based on score and time
-//    */
-//   private isPerfectSolve(puzzle: Puzzle, score: number, timeRemaining?: number): boolean {
-//     // Perfect score is required
-//     if (score < 100) return false;
+    for (let i = 0; i < count; i++) {
+      const puzzle = this.generatePuzzleForGameMode(gameMode, elementData, difficulty);
+      puzzles.push(puzzle);
+    }
 
-//     // For timed puzzles, check if enough time remained
-//     if (puzzle.timeLimit && timeRemaining !== undefined) {
-//       // Perfect if at least 50% of time remains
-//       return timeRemaining >= (puzzle.timeLimit / 2);
-//     }
+    return puzzles;
+  }
 
-//     // For untimed puzzles, just check score
-//     return score === 100;
-//   }
+  private calculateDifficultyForElement(element: Element): number {
+    const baseDifficulty = Math.max(1, Math.floor(element.atomicNumber / 2));
+    return Math.min(10, baseDifficulty);
+  }
 
-//   /**
-//    * Get a list of related elements by atomic number proximity
-//    */
-//   private getRelatedElements(element: Element, count: number): ElementSymbol[] {
-//     // Get elements close to the current element in atomic number
-//     return ELEMENTS_DATA
-//       .filter(e => e.atomicNumber !== element.atomicNumber) // Exclude current element
-//       .sort((a, b) =>
-//         Math.abs(a.atomicNumber - element.atomicNumber) -
-//         Math.abs(b.atomicNumber - element.atomicNumber)
-//       )
-//       .slice(0, count)
-//       .map(e => e.symbol);
-//   }
+  private isPerfectSolve(puzzle: Puzzle, score: number, timeRemaining?: number): boolean {
+    const isPerfectScore = score === 100;
+    if (!isPerfectScore) return false;
 
-//   /**
-//    * Gets instructions for a specific game mode
-//    */
-//   private getInstructionsForGameMode(gameMode: GameMode): string {
-//     switch (gameMode) {
-//       case GameMode.TUTORIAL:
-//         return "Follow the on-screen instructions to learn the basics of the game.";
-//       case GameMode.ELEMENT_MATCH:
-//         return "Match elements with their correct properties by dragging them to the appropriate slots.";
-//       case GameMode.PERIODIC_SORT:
-//         return "Arrange the elements in correct order based on their atomic number.";
-//       case GameMode.ELECTRON_SHELL:
-//         return "Build the correct electron shell configuration for each element.";
-//       case GameMode.COMPOUND_BUILD:
-//         return "Create compounds by combining elements according to their valence.";
-//       case GameMode.ELEMENT_QUIZ:
-//         return "Answer questions about element properties to earn points.";
-//       case GameMode.REACTION_BALANCE:
-//         return "Balance the chemical equations by adjusting the coefficients.";
-//       case GameMode.ORBITAL_PUZZLE:
-//         return "Fill the electron orbitals according to the Aufbau principle.";
-//       case GameMode.ISOTOPE_BUILDER:
-//         return "Build isotopes by adding the correct number of neutrons to the nucleus.";
-//       case GameMode.ELECTRON_FLOW:
-//         return "Guide electrons through the energy levels to complete the circuit.";
-//       default:
-//         return "Complete the puzzle to earn electrons and advance.";
-//     }
-//   }
+    if (puzzle.timeLimit !== undefined && typeof timeRemaining === 'number') {
+      const minimumTimeRequired = puzzle.timeLimit / 2;
+      return timeRemaining >= minimumTimeRequired;
+    }
 
-//   /**
-//    * Gets an element by its symbol
-//    */
-//   private getElementBySymbol(symbol: ElementSymbol): Element {
-//     const element = ELEMENTS_DATA.find(element => element.symbol === symbol);
+    return true;
+  }
 
-//     if (!element) {
-//       throw new Error(`Element with symbol ${symbol} not found`);
-//     }
+  private calculateTimeTaken(
+    timeLimit: number | undefined,
+    timeRemaining: number | undefined
+  ): number {
+    if (timeLimit === undefined || typeof timeRemaining !== 'number') {
+      return 0;
+    }
+    return timeLimit - timeRemaining;
+  }
 
-//     return element;
-//   }
-// }
+  private getRelatedElements(element: Element, count: number): ElementSymbol[] {
+    return ELEMENTS_DATA.filter(e => e.atomicNumber !== element.atomicNumber)
+      .sort(
+        (a, b) =>
+          Math.abs(a.atomicNumber - element.atomicNumber) -
+          Math.abs(b.atomicNumber - element.atomicNumber)
+      )
+      .slice(0, count)
+      .map(e => e.symbol);
+  }
+
+  private generatePuzzleForGameMode(
+    gameMode: GameMode,
+    elementData: Element,
+    difficulty: number
+  ): Puzzle {
+    switch (gameMode) {
+      case GameMode.ELEMENT_MATCH: {
+        const relatedElements = this.getRelatedElements(elementData, 5);
+        return this.generatePuzzle(gameMode, difficulty, [elementData.symbol, ...relatedElements]);
+      }
+      case GameMode.PERIODIC_SORT: {
+        const periodElements = ELEMENTS_DATA.filter(e => e.period === elementData.period).map(
+          e => e.symbol
+        );
+        return this.generatePuzzle(gameMode, difficulty, periodElements);
+      }
+      case GameMode.ELECTRON_SHELL: {
+        const differentShellElements = ELEMENTS_DATA.filter(e => e.period <= elementData.period)
+          .slice(0, 6)
+          .map(e => e.symbol);
+        return this.generatePuzzle(gameMode, difficulty, differentShellElements);
+      }
+      default:
+        return this.generatePuzzle(gameMode, difficulty, [elementData.symbol]);
+    }
+  }
+
+  private getInstructionsForGameMode(gameMode: GameMode): string {
+    const instructionsMap: Record<GameMode, string> = {
+      [GameMode.TUTORIAL]: 'Follow the on-screen instructions to learn the basics of the game.',
+      [GameMode.ELEMENT_MATCH]:
+        'Match elements with their correct properties by dragging them to the appropriate slots.',
+      [GameMode.PERIODIC_SORT]:
+        'Arrange the elements in correct order based on their atomic number.',
+      [GameMode.ELECTRON_SHELL]: 'Build the correct electron shell configuration for each element.',
+      [GameMode.COMPOUND_BUILD]:
+        'Create compounds by combining elements according to their valence.',
+      [GameMode.ELEMENT_QUIZ]: 'Answer questions about element properties to earn points.',
+      [GameMode.REACTION_BALANCE]: 'Balance the chemical equations by adjusting the coefficients.',
+      [GameMode.ORBITAL_PUZZLE]: 'Fill the electron orbitals according to the Aufbau principle.',
+      [GameMode.ISOTOPE_BUILDER]:
+        'Build isotopes by adding the correct number of neutrons to the nucleus.',
+      [GameMode.ELECTRON_FLOW]:
+        'Guide electrons through the energy levels to complete the circuit.',
+    };
+    return instructionsMap[gameMode] ?? 'Complete the puzzle to earn electrons and advance.';
+  }
+
+  private getElementBySymbol(symbol: ElementSymbol): Element {
+    const element = ELEMENTS_DATA.find(element => element.symbol === symbol);
+
+    if (!element) {
+      throw new Error(`Element with symbol ${symbol} not found`);
+    }
+
+    return element;
+  }
+}
