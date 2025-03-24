@@ -1,67 +1,72 @@
 /***********************************************
  * FILE: src/ui/components/GameModeSelection.tsx
- * CREATED: 2025-03-22 12:41:20
+ * CREATED: 2025-03-23 20:12:11
  *
  * PURPOSE:
- * Component that displays and handles the selection of different game modes.
- * Shows available modes, their descriptions, and handles selection while
- * respecting disabled states.
+ * Component for selecting different game modes, showing
+ * available and locked modes with visual indicators.
  *
- * METHODS:
- * - GameModeSelection: Main component that renders the game mode interface
- * - createClickHandler: Creates a memoized handler for mode selection
+ * PROPS:
+ * - onSelect: Callback when a game mode is selected
  *****************/
 
-import type { FC } from 'react';
-import { useCallback } from 'react';
+interface GameModeSelectionProps {
+  onSelect?: (modeId: string) => void;
+}
 
 interface GameMode {
   id: string;
   name: string;
   description: string;
-  disabled: boolean;
+  available: boolean;
 }
 
-interface GameModeSelectionProps {
-  gameModes: GameMode[];
-  onSelect: (modeId: string) => void;
+const gameModes: GameMode[] = [
+  {
+    id: 'element-match',
+    name: 'Element Match',
+    description: 'Match elements to earn AW points',
+    available: true,
+  },
+  {
+    id: 'coming-soon',
+    name: 'More Games Coming Soon',
+    description: 'Stay tuned for more game modes',
+    available: false,
+  },
+];
+
+function createModeHandler(mode: GameMode, onSelect?: (modeId: string) => void): () => void {
+  return function handleMode(): void {
+    if (mode.available && onSelect) {
+      onSelect(mode.id);
+    }
+  };
 }
 
-const GameModeSelection: FC<GameModeSelectionProps> = ({ gameModes, onSelect }) => {
-  const createClickHandler = useCallback(
-    (id: string, disabled: boolean): (() => void) => {
-      return (): void => {
-        if (!disabled) {
-          onSelect(id);
-        }
-      };
-    },
-    [onSelect]
-  );
-
+export function GameModeSelection({ onSelect }: GameModeSelectionProps): JSX.Element {
   return (
-    <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
-      {gameModes.map(mode => (
-        <button
-          key={mode.id}
-          onClick={createClickHandler(mode.id, mode.disabled)}
-          disabled={mode.disabled}
-          className={`
-            flex flex-col items-start p-4 rounded-lg border
-            transition-all duration-200
-            ${
-              mode.disabled
-                ? 'opacity-50 cursor-not-allowed bg-gray-100'
-                : 'hover:border-blue-500 hover:shadow-md bg-white'
-            }
-          `}
-        >
-          <h3 className="text-lg font-semibold mb-2">{mode.name}</h3>
-          <p className="text-sm text-gray-600">{mode.description}</p>
-        </button>
-      ))}
+    <div className="p-4 border rounded shadow-sm">
+      <h2 className="text-xl font-bold mb-4">Game Modes</h2>
+      <div className="space-y-4">
+        {gameModes.map(mode => {
+          const handleClick = createModeHandler(mode, onSelect);
+          return (
+            <div
+              key={mode.id}
+              onClick={handleClick}
+              className={`p-4 border rounded ${
+                mode.available
+                  ? 'bg-white hover:bg-gray-50 cursor-pointer'
+                  : 'bg-gray-100 cursor-not-allowed'
+              }`}
+            >
+              <h3 className="font-bold">{mode.name}</h3>
+              <p className="text-sm text-gray-600">{mode.description}</p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
-};
-
-export default GameModeSelection;
+}
