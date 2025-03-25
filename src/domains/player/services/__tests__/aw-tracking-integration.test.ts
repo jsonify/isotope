@@ -29,7 +29,8 @@ describe('atomic weight tracking integration', () => {
 
   // Test profile helpers
   const createTestProfile = async (displayName: string = 'Test Player'): Promise<PlayerProfile> => {
-    await profileService.resetProfile();
+    const testProfile = await createTestProfile();
+    await profileService.resetProfile(testProfile);
 
     // Instead of relying on profileService.updateProfile/getProfile which seems to return incomplete data
     // Directly return a mock profile that satisfies the PlayerProfile interface

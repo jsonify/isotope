@@ -29,6 +29,7 @@ vi.mock('../../domains/player/services/PlayerProfileService', () => ({
 
 // Import after mock to avoid circular dependencies
 import { PlayerProfileService } from '../../domains/player/services/PlayerProfileService';
+import { GameMode } from '../../domains/shared/models/domain-models';
 import { PlayerContext } from '../../ui/context/PlayerContext.context';
 
 /**
@@ -68,7 +69,22 @@ export async function renderWithPlayerContext(
   options: RenderWithContextOptions = {}
 ): Promise<ReturnType<typeof render>> {
   const mockService = PlayerProfileService.getInstance();
-  vi.mocked(mockService.resetProfile).mockResolvedValue(true);
+  vi.mocked(mockService.resetProfile).mockResolvedValue({
+    success: true,
+    profile: {
+      id: '123',
+      displayName: 'Test User',
+      level: { atomicNumber: 1, atomicWeight: 0, gameLab: 1 },
+      currentElement: 'H',
+      electrons: 0,
+      unlockedGames: [GameMode.TUTORIAL],
+      achievements: [],
+      tutorialCompleted: false,
+      lastLogin: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
 
   if (options.awScore !== undefined) {
     vi.mocked(mockService.getCurrentAWScore).mockReturnValue(options.awScore);
