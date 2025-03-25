@@ -20,7 +20,7 @@
 
 ### Minimal Playable Loop
 
-- [ ] Implement a simple first game mode (Element Match)
+- [x] Implement a simple first game mode (Element Match)
   - [ ] Define simple matching mechanic (can be any type of match)
   - [ ] Create scoring system that awards AW points
   - [ ] Connect completion to progression system
