@@ -1,10 +1,28 @@
 import '@testing-library/jest-dom';
 import { afterEach, afterAll, expect, vi } from 'vitest';
 
+// Mock PlayerProfileService globally
+vi.mock('../domains/player/services/PlayerProfileService', () => ({
+  PlayerProfileService: {
+    getInstance: vi.fn(() => ({
+      getCurrentAWScore: vi.fn(() => 0),
+      updateAWScore: vi.fn().mockResolvedValue(0),
+      resetProfile: vi.fn().mockResolvedValue(true),
+      getProfile: vi.fn().mockResolvedValue({
+        awScore: 0,
+        level: 1,
+        achievements: [],
+        unlockedGameModes: ['basic'],
+      }),
+      updateProfile: vi.fn().mockResolvedValue(true), // Add updateProfile mock
+    })),
+  },
+}));
+
 // Set up browser globals for test environment
 if (typeof window === 'undefined') {
   global.window = {
-    ...global.window, // Preserve existing window properties if any
+    ...global.window,
     matchMedia: vi.fn().mockImplementation(query => ({
       matches: false,
       media: query,
@@ -16,7 +34,6 @@ if (typeof window === 'undefined') {
       dispatchEvent: vi.fn(),
     })),
     localStorage: {
-      // Mock localStorage
       getItem: vi.fn(),
       setItem: vi.fn(),
       removeItem: vi.fn(),
@@ -25,7 +42,7 @@ if (typeof window === 'undefined') {
   } as unknown as Window & typeof globalThis;
 
   global.document = {
-    ...global.document, // Preserve existing document properties if any
+    ...global.document,
     createElement: vi.fn(),
     querySelector: vi.fn(),
     body: {
@@ -36,7 +53,7 @@ if (typeof window === 'undefined') {
     },
   } as unknown as Document;
   global.navigator = {
-    ...global.navigator, // Preserve existing navigator properties
+    ...global.navigator,
   } as Navigator;
 }
 
@@ -52,7 +69,7 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-// Make jest's spyOn available globally (for compatibility with existing tests)
+// Make jest's spyOn available globally
 Object.assign(globalThis, {
   jest: {
     spyOn: vi.spyOn,
@@ -61,10 +78,6 @@ Object.assign(globalThis, {
 
 // Add a final cleanup function that runs after all tests
 afterAll(() => {
-  // Clear any timers that might be hanging
   vi.clearAllTimers();
   vi.useRealTimers();
-
-  // We don't use process.exit here as it would break when running tests locally
-  // The CI will use the exit-handler.js script to handle forced exit
 }, 5000);

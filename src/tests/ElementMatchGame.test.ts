@@ -1,6 +1,6 @@
 /***********************************************
  * FILE: src/tests/ElementMatchGame.test.ts
- * CREATED: 2025-03-23 18:33:09
+ * CREATED: 2025-03-24 15:34:01
  *
  * PURPOSE:
  * Test suite for ElementMatchGame core functionality including
@@ -54,7 +54,7 @@ describe('ElementMatchGame Core Logic', () => {
       const matched = isMatch(element1, element2);
       const score = calculateScore(matched);
 
-      const profileService = new PlayerProfileService();
+      const profileService = PlayerProfileService.getInstance();
       await profileService.updateAWScore(score);
 
       expect(mockUpdateAWScore).toHaveBeenCalledWith(10);
@@ -71,7 +71,7 @@ describe('ElementMatchGame Core Logic', () => {
       const matched = isMatch(element1, element2);
       const score = calculateScore(matched);
 
-      const profileService = new PlayerProfileService();
+      const profileService = PlayerProfileService.getInstance();
       await profileService.updateAWScore(score);
 
       expect(mockUpdateAWScore).toHaveBeenCalledWith(0);
